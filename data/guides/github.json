@@ -1,0 +1,231 @@
+{
+  "slug": "github",
+  "appName": "GitHub",
+  "aliases": ["github", "github oauth", "github apps", "github.com"],
+  "website": "https://github.com",
+  "lastChecked": "2026-10-01",
+  "generatedBy": "seed",
+
+  "composio": {
+    "managedOAuth": "yes",
+    "whenToBringYourOwn": [
+      "You want your own brand on the consent screen instead of Composio's.",
+      "You need scopes beyond what Composio's default GitHub app requests.",
+      "You need a dedicated GitHub API rate-limit quota, separate from other Composio users.",
+      "You need polling triggers faster than managed auth's 15-minute minimum."
+    ],
+    "claimIds": ["c1"]
+  },
+
+  "verdict": {
+    "oneLiner": "About 10 minutes, no review required.",
+    "blockerType": "none",
+    "difficulty": 1,
+    "readyIn": {
+      "min": "5 minutes",
+      "typical": "10 minutes",
+      "worst": "30 minutes (if you need an org admin to approve or enable the app)"
+    },
+    "claimIds": ["c3", "c8"]
+  },
+
+  "criticalPath": [
+    {
+      "action": "Create the OAuth App under Settings → Developer settings → OAuth Apps → New OAuth App.",
+      "why": "This is the entire registration step — there is no review queue, so you're unblocked immediately after submitting the form.",
+      "claimIds": ["c2", "c3"]
+    },
+    {
+      "action": "Pick a single Authorization callback URL before you register.",
+      "why": "GitHub allows exactly one callback URL per OAuth App, so settle on your final redirect URI (e.g. the one Composio's Auth Config will show you) up front to avoid re-registering.",
+      "claimIds": ["c4"]
+    },
+    {
+      "action": "Confirm you actually need your own app instead of Composio's managed GitHub OAuth.",
+      "why": "Composio already manages GitHub OAuth; only bring your own for custom branding, extra scopes, a dedicated rate-limit quota, or faster polling triggers.",
+      "claimIds": ["c1"]
+    },
+    {
+      "action": "If your org uses SAML SSO, confirm members can authorize the identity provider.",
+      "why": "Otherwise some org members may be blocked from authorizing your OAuth App even though the app itself needs no review.",
+      "claimIds": ["c7"]
+    }
+  ],
+
+  "beforeApproval": {
+    "whatWorks": "Everything. There is no review or approval step for standard GitHub OAuth Apps — the app is fully usable by any GitHub user as soon as it's created.",
+    "limits": [
+      "Max 100 OAuth Apps per user or organization.",
+      "Only one callback URL per app — different environments (dev/staging/prod) need separate apps or a shared gateway URL.",
+      "Org members under SAML SSO may need to separately authorize the identity provider before using your app."
+    ],
+    "claimIds": ["c3", "c5", "c4", "c7"]
+  },
+
+  "steps": [
+    {
+      "title": "Decide whether you need your own OAuth App",
+      "detail": "Check whether Composio's managed GitHub OAuth already covers your needs (default scopes, shared rate limit, 15-minute minimum polling). Bring your own only for custom branding, extra scopes, a dedicated quota, or faster triggers.",
+      "actor": "either",
+      "estTime": "2 minutes",
+      "claimIds": ["c1"]
+    },
+    {
+      "title": "Open GitHub Developer Settings",
+      "detail": "Go to Settings → Developer settings → OAuth Apps → New OAuth App, or https://github.com/settings/applications/new directly.",
+      "actor": "human",
+      "whyHuman": "Requires being logged into the GitHub account or organization that will own the app.",
+      "estTime": "1 minute",
+      "claimIds": ["c2"]
+    },
+    {
+      "title": "Fill in the app details",
+      "detail": "Provide Application name, Homepage URL, and Authorization callback URL (required). Application description and Enable Device Flow are optional.",
+      "actor": "human",
+      "whyHuman": "Login session and form submission on github.com.",
+      "estTime": "3 minutes",
+      "claimIds": ["c2"]
+    },
+    {
+      "title": "Generate a client secret",
+      "detail": "On the newly created app's page, click \"Generate a new client secret\" and store the Client ID and Secret securely — the secret is shown only once.",
+      "actor": "human",
+      "whyHuman": "Secret is shown once, tied to the authenticated session that created the app.",
+      "estTime": "1 minute",
+      "claimIds": ["c2"]
+    }
+  ],
+
+  "config": {
+    "portalUrl": "https://github.com/settings/developers",
+    "redirectUriNotes": "Use the exact callback URL shown in your Composio Auth Config (or your production redirect URI). GitHub allows only one callback URL per OAuth App, so changing it later means updating it in both GitHub and Composio.",
+    "scopes": [
+      {
+        "name": "repo",
+        "purpose": "Read/write access to code, issues, and pull requests in the user's repositories.",
+        "reviewLevel": "none"
+      },
+      {
+        "name": "read:user",
+        "purpose": "Read the authenticated user's profile data.",
+        "reviewLevel": "none"
+      },
+      {
+        "name": "notifications",
+        "purpose": "Read a user's GitHub notifications.",
+        "reviewLevel": "none"
+      }
+    ],
+    "otherFields": [
+      "Application name",
+      "Homepage URL",
+      "Application description (optional)",
+      "Enable Device Flow (optional)"
+    ]
+  },
+
+  "review": {
+    "requiredWhen": "Never, for standard OAuth Apps — GitHub has no app review or verification process for this app type.",
+    "process": ["No submission or review process exists for OAuth Apps."],
+    "timeline": "N/A — immediate.",
+    "cost": "Free.",
+    "recurring": "None.",
+    "claimIds": ["c3"]
+  },
+
+  "gotchas": [
+    {
+      "text": "Only one callback URL per OAuth App — register a separate app per environment if you need different URLs.",
+      "claimIds": ["c4"]
+    },
+    {
+      "text": "Max 100 OAuth Apps per user or organization.",
+      "claimIds": ["c5"]
+    },
+    {
+      "text": "GitHub recommends GitHub Apps (not OAuth Apps) for fine-grained permissions and short-lived tokens — worth checking whether Composio's managed auth already uses GitHub Apps for this toolkit.",
+      "claimIds": ["c6"]
+    },
+    {
+      "text": "Organizations with SAML SSO may require members to authorize the IdP separately before your OAuth App can access org resources.",
+      "claimIds": ["c7"]
+    }
+  ],
+
+  "composioHandoff": [
+    "In the Composio dashboard: Create Auth Config → choose the GitHub toolkit + OAuth2.",
+    "Register the provider app using the redirect URI Composio shows you.",
+    "Paste the Client ID and Secret from the GitHub OAuth App you created.",
+    "Copy the resulting ac_... auth config id and pass it via auth_configs in your session."
+  ],
+
+  "claims": [
+    {
+      "id": "c1",
+      "text": "Composio offers managed OAuth for the GitHub toolkit.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.composio.dev/toolkits/github", "title": "Composio — GitHub toolkit docs" }
+      ]
+    },
+    {
+      "id": "c2",
+      "text": "Registering a GitHub OAuth App requires Application name, Homepage URL, and Authorization callback URL (callback URL is required); description and Enable Device Flow are optional.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.github.com/en/enterprise-cloud@latest/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app", "title": "Creating an OAuth App — GitHub Docs" }
+      ]
+    },
+    {
+      "id": "c3",
+      "text": "There is no review step for registering a GitHub OAuth App — it is usable immediately after creation.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.github.com/en/enterprise-cloud@latest/apps/oauth-apps/building-oauth-apps", "title": "Building OAuth Apps — GitHub Docs" }
+      ]
+    },
+    {
+      "id": "c4",
+      "text": "Each OAuth App supports only one callback URL.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.github.com/en/enterprise-cloud@latest/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app", "title": "Creating an OAuth App — GitHub Docs" }
+      ]
+    },
+    {
+      "id": "c5",
+      "text": "GitHub limits each user or organization to a maximum of 100 OAuth Apps.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.github.com/en/enterprise-cloud@latest/apps/oauth-apps/building-oauth-apps", "title": "Building OAuth Apps — GitHub Docs" }
+      ]
+    },
+    {
+      "id": "c6",
+      "text": "GitHub recommends GitHub Apps over OAuth Apps for fine-grained permissions and short-lived tokens.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.github.com/en/enterprise-cloud@latest/apps/oauth-apps/building-oauth-apps", "title": "Building OAuth Apps — GitHub Docs" }
+      ]
+    },
+    {
+      "id": "c7",
+      "text": "Organizations with SAML SSO enabled may require members to authenticate via the identity provider before authorizing an OAuth App.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.github.com/en/enterprise-cloud@latest/apps/oauth-apps/using-oauth-apps/installing-an-oauth-app-in-your-organization", "title": "Installing an OAuth App in your organization — GitHub Docs" }
+      ]
+    },
+    {
+      "id": "c8",
+      "text": "Registering and starting to use a GitHub OAuth App takes about 10 minutes end-to-end.",
+      "status": "inferred",
+      "sources": [],
+      "note": "No official time estimate is published by GitHub; inferred from the small number of required fields and the absence of a review step. Not yet tested end-to-end — see open questions."
+    }
+  ],
+
+  "openQuestions": [
+    "The ~10 minute estimate (c8) is inferred, not tested. TODO (Chayan): actually register a test GitHub OAuth App, record the real time taken, and upgrade c8 (and related claims) to 'tested'."
+  ]
+}
