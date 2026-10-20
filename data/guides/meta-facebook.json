@@ -1,0 +1,309 @@
+{
+  "slug": "meta-facebook",
+  "appName": "Meta (Facebook)",
+  "aliases": [
+    "meta",
+    "facebook",
+    "facebook.com",
+    "fb",
+    "instagram",
+    "meta graph api",
+    "graph api",
+    "developers.facebook.com"
+  ],
+  "website": "https://developers.facebook.com",
+  "lastChecked": "2026-10-20",
+  "generatedBy": "seed",
+
+  "composio": {
+    "managedOAuth": "yes",
+    "whenToBringYourOwn": [
+      "You want your own brand on the Facebook login dialog instead of Composio's.",
+      "You need permissions beyond Composio's defaults, each of which must be approved individually.",
+      "You need a dedicated Graph API rate-limit quota rather than sharing Composio's.",
+      "Your use case requires Advanced Access, which is tied to your own verified business."
+    ],
+    "claimIds": ["c1", "c5"]
+  },
+
+  "verdict": {
+    "oneLiner": "Works immediately for your own team — reaching real users means business verification plus per-permission app review, on a timeline Meta does not publish.",
+    "blockerType": "business_verification",
+    "difficulty": 5,
+    "readyIn": {
+      "min": "Immediate, for people with a role on the app",
+      "typical": "Unknown — Meta publishes no review timeline",
+      "worst": "Unknown — business verification and per-permission review, with no published SLA"
+    },
+    "claimIds": ["c2", "c3", "c10"]
+  },
+
+  "criticalPath": [
+    {
+      "action": "Start Business Verification immediately — it gates everything else.",
+      "why": "Advanced Access is impossible without a verified business, and verification needs legal entity documents you may not have to hand.",
+      "claimIds": ["c3"]
+    },
+    {
+      "action": "Build and test against Standard Access with your own team first.",
+      "why": "Standard Access works right away for anyone with a role on the app, so the whole integration can be built while verification is pending.",
+      "claimIds": ["c2"]
+    },
+    {
+      "action": "List the exact permissions you need, and justify each one separately.",
+      "why": "Permissions and features are approved individually rather than as a bundle, so an unjustified extra permission delays everything behind it.",
+      "claimIds": ["c5"]
+    },
+    {
+      "action": "Prepare reviewer access — test credentials and a screencast — before submitting.",
+      "why": "Meta tests the app itself, and a submission reviewers cannot access is rejected outright rather than queried.",
+      "claimIds": ["c6"]
+    }
+  ],
+
+  "beforeApproval": {
+    "whatWorks": "Everything works, but only for people who have a role on the app — admins, developers and testers you have added. Real users outside that list cannot grant the permissions at all.",
+    "limits": [
+      "Standard Access permissions and features only work for people with a role on the app.",
+      "The app must be switched to Live mode before you can request Advanced Access for non-role users.",
+      "Advanced Access requires Business Verification to be complete.",
+      "Some advanced permissions additionally require a Data Protection Assessment."
+    ],
+    "claimIds": ["c2", "c7", "c3", "c8"]
+  },
+
+  "steps": [
+    {
+      "title": "Decide exactly which permissions and features you need",
+      "detail": "Enumerate each Graph API permission the integration requires and write down what the app does with the data. Each one is reviewed and approved on its own merits.",
+      "actor": "agent",
+      "estTime": "1 hour",
+      "claimIds": ["c5"]
+    },
+    {
+      "title": "Create the app in the Meta App Dashboard",
+      "detail": "Create a Business-type app at developers.facebook.com, add Facebook Login, and set the valid OAuth redirect URI.",
+      "actor": "human",
+      "whyHuman": "Requires a logged-in Facebook developer account.",
+      "estTime": "30 minutes",
+      "claimIds": ["c2"]
+    },
+    {
+      "title": "Complete Business Verification",
+      "detail": "In Meta Business Manager, submit legal entity details and supporting documents — business name, address, phone and registration documents — and verify the domain.",
+      "actor": "human",
+      "whyHuman": "Requires legal entity documents and an authorised representative of the business.",
+      "claimIds": ["c3"]
+    },
+    {
+      "title": "Build and test under Standard Access",
+      "detail": "Add teammates as admins, developers or testers and exercise the full flow. Standard Access behaves identically to Advanced Access for these users.",
+      "actor": "either",
+      "claimIds": ["c2"]
+    },
+    {
+      "title": "Switch the app to Live mode",
+      "detail": "Live mode is a precondition for requesting Advanced Access on behalf of users who have no role on the app.",
+      "actor": "human",
+      "whyHuman": "A deliberate production switch tied to the app owner's account.",
+      "claimIds": ["c7"]
+    },
+    {
+      "title": "Submit for App Review with reviewer access",
+      "detail": "For each permission, supply a justification, a screencast showing the permission in use, and working test credentials. Meta's reviewers will try to use the app themselves.",
+      "actor": "human",
+      "whyHuman": "Requires submitting for review and supplying working credentials from the owning account.",
+      "claimIds": ["c4", "c6"]
+    },
+    {
+      "title": "Complete the Data Protection Assessment if prompted",
+      "detail": "Some advanced permissions trigger a separate assessment of how your app stores, shares and protects platform data.",
+      "actor": "human",
+      "whyHuman": "Requires attestations about company data handling practices.",
+      "claimIds": ["c8"]
+    }
+  ],
+
+  "config": {
+    "portalUrl": "https://developers.facebook.com/apps",
+    "redirectUriNotes": "Add the exact redirect URI from your Composio auth config to Valid OAuth Redirect URIs under Facebook Login → Settings. Meta matches it strictly, including the trailing slash, and the domain must be one you have verified.",
+    "scopes": [
+      {
+        "name": "public_profile",
+        "purpose": "Basic profile fields. Granted by default.",
+        "reviewLevel": "none"
+      },
+      {
+        "name": "email",
+        "purpose": "The user's email address.",
+        "reviewLevel": "none"
+      },
+      {
+        "name": "pages_show_list",
+        "purpose": "List the Pages a user manages.",
+        "reviewLevel": "app_review"
+      },
+      {
+        "name": "pages_read_engagement",
+        "purpose": "Read content and engagement metrics on a Page.",
+        "reviewLevel": "app_review"
+      },
+      {
+        "name": "pages_manage_posts",
+        "purpose": "Create, edit and delete Page posts.",
+        "reviewLevel": "app_review"
+      },
+      {
+        "name": "business_management",
+        "purpose": "Manage business assets. Typically requires a Data Protection Assessment.",
+        "reviewLevel": "app_review"
+      }
+    ],
+    "otherFields": [
+      "App name",
+      "App contact email",
+      "Business account linkage",
+      "Privacy policy URL",
+      "Terms of service URL",
+      "App domains",
+      "Valid OAuth redirect URIs",
+      "Data deletion callback URL"
+    ]
+  },
+
+  "review": {
+    "requiredWhen": "Once anyone without a role on the app uses it. Internal use by admins, developers and testers under Standard Access needs no review.",
+    "process": [
+      "Complete Business Verification for the business that owns the app.",
+      "Switch the app to Live mode.",
+      "Request Advanced Access for each permission or feature individually.",
+      "Supply a justification, a screencast and working test credentials for each request.",
+      "Meta's reviewers test the app themselves against those credentials.",
+      "Complete a Data Protection Assessment where the requested permissions require one."
+    ],
+    "timeline": "Meta publishes no official review timeline. We could not find a stated SLA in Meta's own documentation, and we are not quoting anecdotal figures in its place.",
+    "cost": "No fee is charged by Meta for app review or business verification.",
+    "recurring": "Apps with Advanced Access must complete an annual Data Use Checkup.",
+    "claimIds": ["c3", "c4", "c5", "c6", "c9", "c10"]
+  },
+
+  "gotchas": [
+    {
+      "text": "If reviewers cannot access the app with the credentials you supply, the whole submission is rejected rather than queried — broken test credentials cost you a full review cycle.",
+      "claimIds": ["c6"]
+    },
+    {
+      "text": "Permissions are approved one at a time, so a single weakly justified permission can hold up an otherwise complete submission.",
+      "claimIds": ["c5"]
+    },
+    {
+      "text": "The app must already be in Live mode before you can request Advanced Access, which catches teams who plan to flip the switch at launch.",
+      "claimIds": ["c7"]
+    },
+    {
+      "text": "Approval is not permanent — an annual Data Use Checkup is required to keep Advanced Access.",
+      "claimIds": ["c9"]
+    },
+    {
+      "text": "Business Verification needs real legal entity documents, so solo developers without a registered business can stall here indefinitely.",
+      "claimIds": ["c3"]
+    }
+  ],
+
+  "composioHandoff": [
+    "In the Composio dashboard: Create Auth Config → choose the Facebook toolkit + OAuth2.",
+    "Register the provider app using the redirect URI Composio shows you, and add it to Valid OAuth Redirect URIs in the Meta App Dashboard.",
+    "Paste the App ID and App Secret from Meta's Basic Settings.",
+    "Copy the resulting ac_... auth config id and pass it via auth_configs in your session."
+  ],
+
+  "claims": [
+    {
+      "id": "c1",
+      "text": "Composio offers managed OAuth for the Facebook toolkit.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.composio.dev/toolkits/facebook", "title": "Composio — Facebook toolkit docs" }
+      ]
+    },
+    {
+      "id": "c2",
+      "text": "Standard Access is the default access level, and permissions and features at that level only work for people who have a role on the app.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.facebook.com/documentation/development/graph-api/overview/access-levels.md", "title": "Access levels — Meta for Developers" }
+      ]
+    },
+    {
+      "id": "c3",
+      "text": "Advanced Access, which is required to serve users without a role on the app, requires Business Verification.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.facebook.com/documentation/development/graph-api/overview/access-levels.md", "title": "Access levels — Meta for Developers" },
+        { "url": "https://developers.facebook.com/documentation/development/release/business-verification", "title": "Business verification — Meta for Developers" }
+      ]
+    },
+    {
+      "id": "c4",
+      "text": "App Review is required once anyone without a role on the app uses it.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/app-review", "title": "App review — Meta for Developers" }
+      ]
+    },
+    {
+      "id": "c5",
+      "text": "Permissions and features are reviewed and approved individually rather than as a single bundle.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/app-review", "title": "App review — Meta for Developers" }
+      ]
+    },
+    {
+      "id": "c6",
+      "text": "Meta's reviewers test the app themselves, and a submission they cannot access is rejected.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/app-review", "title": "App review — Meta for Developers" }
+      ]
+    },
+    {
+      "id": "c7",
+      "text": "An app must be in Live mode before Advanced Access can be requested for users who have no role on it.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.facebook.com/documentation/development/graph-api/overview/access-levels.md", "title": "Access levels — Meta for Developers" }
+      ]
+    },
+    {
+      "id": "c8",
+      "text": "Some advanced permissions additionally require a Data Protection Assessment.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.facebook.com/documentation/development/trust-center", "title": "Trust center — Meta for Developers" }
+      ]
+    },
+    {
+      "id": "c9",
+      "text": "Apps holding Advanced Access must complete an annual Data Use Checkup to retain it.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.facebook.com/documentation/development/trust-center", "title": "Trust center — Meta for Developers" }
+      ]
+    },
+    {
+      "id": "c10",
+      "text": "Meta does not publish an official timeline or SLA for App Review or Business Verification.",
+      "status": "unverified",
+      "sources": [],
+      "note": "We could not find any stated review duration in Meta's own documentation. Absence of evidence is not proof none exists, so this is recorded as unverified rather than sourced. Anecdotal community figures were deliberately not used."
+    }
+  ],
+
+  "openQuestions": [
+    "How long App Review and Business Verification actually take in practice — Meta publishes nothing, and we chose not to quote anecdotal numbers.",
+    "Which specific permissions trigger a Data Protection Assessment, as opposed to App Review alone.",
+    "Whether the annual Data Use Checkup can revoke already-granted Advanced Access if missed, and how much notice is given.",
+    "No seed claim here is 'tested' — nobody on this project has taken a Meta app through business verification or app review."
+  ]
+}

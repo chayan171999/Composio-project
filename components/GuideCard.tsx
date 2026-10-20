@@ -1,20 +1,9 @@
 import Link from "next/link";
-import type { BlockerType, Guide } from "@/lib/schema";
-
-const BLOCKER_STYLES: Record<BlockerType, { label: string; className: string }> = {
-  none: { label: "No review", className: "bg-emerald-100 text-emerald-800" },
-  scope_review: { label: "Scope review", className: "bg-amber-100 text-amber-800" },
-  business_verification: {
-    label: "Business verification",
-    className: "bg-rose-100 text-rose-800",
-  },
-  partner_gated: { label: "Partner-gated", className: "bg-rose-100 text-rose-800" },
-  paid_plan: { label: "Paid plan", className: "bg-violet-100 text-violet-800" },
-  other: { label: "Other", className: "bg-gray-100 text-gray-700" },
-};
+import { BLOCKER_CHIP } from "@/lib/display";
+import type { Guide } from "@/lib/schema";
 
 export default function GuideCard({ guide }: { guide: Guide }) {
-  const blocker = BLOCKER_STYLES[guide.verdict.blockerType];
+  const blocker = BLOCKER_CHIP[guide.verdict.blockerType];
 
   return (
     <Link
@@ -28,7 +17,7 @@ export default function GuideCard({ guide }: { guide: Guide }) {
         </span>
       </div>
       <p className="mt-2 text-sm text-gray-600">
-        Ready in ~{guide.verdict.readyIn.typical}
+        Typically ready in {guide.verdict.readyIn.typical}
       </p>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
         <span>Composio managed: {guide.composio.managedOAuth}</span>

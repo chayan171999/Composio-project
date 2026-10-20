@@ -1,17 +1,10 @@
 import ClaimBadges from "@/components/ClaimBadges";
+import { BLOCKER_CHIP, REVIEW_LEVEL_CHIP } from "@/lib/display";
 import type { Guide } from "@/lib/schema";
-
-const BLOCKER_LABELS: Record<string, string> = {
-  none: "No review",
-  scope_review: "Scope review",
-  business_verification: "Business verification",
-  partner_gated: "Partner-gated",
-  paid_plan: "Paid plan required",
-  other: "Other",
-};
 
 export default function GuideView({ guide }: { guide: Guide }) {
   const { claims } = guide;
+  const blocker = BLOCKER_CHIP[guide.verdict.blockerType];
 
   return (
     <article className="text-gray-900">
@@ -19,8 +12,8 @@ export default function GuideView({ guide }: { guide: Guide }) {
         <p className="text-sm font-medium text-gray-500">{guide.appName}</p>
         <h1 className="mt-1 text-2xl font-semibold">{guide.verdict.oneLiner}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <span className="rounded-full border border-gray-300 bg-gray-50 px-2 py-0.5">
-            {BLOCKER_LABELS[guide.verdict.blockerType] ?? guide.verdict.blockerType}
+          <span className={`rounded-full px-2 py-0.5 font-medium ${blocker.className}`}>
+            {blocker.label}
           </span>
           <span className="rounded-full border border-gray-300 bg-gray-50 px-2 py-0.5">
             Difficulty {guide.verdict.difficulty}/5
@@ -141,7 +134,16 @@ export default function GuideView({ guide }: { guide: Guide }) {
                 <tr key={scope.name} className="border-b border-gray-100">
                   <td className="py-1 pr-2 font-mono text-xs">{scope.name}</td>
                   <td className="py-1 pr-2 text-gray-600">{scope.purpose}</td>
-                  <td className="py-1 text-gray-600">{scope.reviewLevel}</td>
+                  <td className="py-1">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs ${
+                        (REVIEW_LEVEL_CHIP[scope.reviewLevel] ?? REVIEW_LEVEL_CHIP.unknown)
+                          .className
+                      }`}
+                    >
+                      {(REVIEW_LEVEL_CHIP[scope.reviewLevel] ?? REVIEW_LEVEL_CHIP.unknown).label}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

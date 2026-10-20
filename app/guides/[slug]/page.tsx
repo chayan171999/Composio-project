@@ -1,8 +1,24 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import GuideActions from "@/components/GuideActions";
 import GuideView from "@/components/GuideView";
 import { getGuide } from "@/lib/guides";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const guide = await getGuide(slug);
+  if (!guide) return { title: "Guide not found" };
+
+  return {
+    title: guide.appName,
+    description: guide.verdict.oneLiner,
+  };
+}
 
 export default async function GuidePage({
   params,

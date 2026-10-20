@@ -1,0 +1,81 @@
+# Verification log
+
+What was checked against primary sources, what turned out to be wrong, and what
+remains uncertain. Every entry here was verified by a human reading the cited page,
+not by the agent.
+
+## Seed guide research corrections
+
+**CASA assessment cost — corrected.**
+Initial research quoted roughly $540–$3,000+, attributed to Nango (Aug 2025).
+Google's own documentation states the fee is payable to the third-party assessor and
+ranges from **$500 to $4,500 USD** depending on app complexity. The first-party figure
+replaced the third-party one in `google-gmail.json` (claim `c5`), with the check date
+recorded in the claim note.
+Source: https://developers.google.com/health/app-verification (checked 2026-10-20)
+
+**Nango source URL — dead link, relocated.**
+`https://docs.nango.dev/integrations/google-security-review` returns 404. The page now
+lives at `https://nango.dev/docs/api-integrations/google-shared/google-security-review`.
+Claim `c7` cites the working URL. Citing a 404 would have been worse than not citing.
+
+**CASA duration — added from a first-party source.**
+Initial research said "~6 weeks" without distinguishing tiers. Google states 2–3 weeks
+for tier-2 and 4–6 weeks for tier-3 applications. Both figures are now in claim `c4`
+and the review timeline.
+
+**Google verification timelines — confirmed.**
+Brand verification 2–3 business days and sensitive scope verification 10 business days
+both confirmed against Google's own FAQ, which presents them as expected completion
+times rather than guarantees. That caveat is recorded as claim `c11`.
+Source: https://support.google.com/cloud/answer/13463817?hl=en (checked 2026-10-20)
+
+**Meta review timeline — deliberately left unverified.**
+No stated SLA for App Review or Business Verification was found in Meta's own
+documentation. Rather than quote an anecdotal community figure, claim `c10` is marked
+`unverified` with a note, and the verdict's `readyIn` says "Unknown" outright.
+
+**All seed source URLs checked.** Every URL cited across the three seed guides returns
+200 as of 2026-10-20, except the Nango link noted above, which was replaced.
+
+## Agent output verification
+
+**Zoom (generated 2026-10-20) — spot-checked, no hallucination found.**
+Four claims were checked by fetching the cited page and reading it:
+
+| Claim | Cited page says |
+| --- | --- |
+| Access tokens expire after 1 hour | "Access tokens expire after one hour" ✅ |
+| Refresh tokens expire in 90 days and rotate | "Refresh tokens expire after 90 days. You should always use the latest refresh token" ✅ |
+| Loopback URIs require PKCE | PKCE section present and consistent ✅ |
+| Deauthorization endpoint required | Deauthorization section present ✅ |
+
+Source checked: https://developers.zoom.us/docs/integrations/oauth/
+
+**Failed retrievals become open questions, not invented content.**
+In the Zoom run, four of eight proposed documentation URLs failed to retrieve. The
+agent did not fabricate their contents; the missing topics (REST API rate limits,
+security audit fees) appear in `openQuestions`. This is enforced structurally: the
+citation allow-list is built from `urlContextMetadata` retrieval successes, so a page
+that was never fetched cannot be cited.
+
+## Structural guarantees
+
+These are enforced in code rather than by prompting, and a guide that violates them is
+rejected and sent back for one repair pass:
+
+- A generated guide can never carry `tested` status. Nothing in an agent run was
+  verified by a human, so the status is rejected outright.
+- Every `claimIds` reference must resolve to a claim that exists.
+- A `sourced` claim must cite at least one URL, and that URL must be one the agent
+  actually retrieved.
+
+## Known gaps
+
+- **No seed claim is marked `tested`.** Nobody on this project has registered a test
+  OAuth app end to end, so the GitHub guide's "~10 minutes" estimate remains `inferred`
+  and its open question records that.
+- **CASA free tier-2 route unconfirmed.** Sources disagree on whether a no-cost
+  self-assessment path still exists; Google's documentation does not state it clearly.
+- **Only one generated guide was spot-checked in depth** (Zoom). Slack and Figma were
+  reviewed for structure and plausibility but not line-by-line against their sources.

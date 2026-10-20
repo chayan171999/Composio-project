@@ -1,0 +1,310 @@
+{
+  "slug": "google-gmail",
+  "appName": "Google (Gmail)",
+  "aliases": [
+    "gmail",
+    "google",
+    "google mail",
+    "gmail.com",
+    "google workspace",
+    "google cloud",
+    "mail.google.com"
+  ],
+  "website": "https://developers.google.com",
+  "lastChecked": "2026-10-20",
+  "generatedBy": "seed",
+
+  "composio": {
+    "managedOAuth": "yes",
+    "whenToBringYourOwn": [
+      "You want your own brand on the Google consent screen instead of Composio's.",
+      "You need restricted scopes (gmail.readonly, gmail.modify, mail.google.com) beyond Composio's defaults.",
+      "You need a dedicated Gmail API quota rather than sharing Composio's.",
+      "You need polling triggers faster than managed auth's 15-minute minimum."
+    ],
+    "claimIds": ["c1"]
+  },
+
+  "verdict": {
+    "oneLiner": "Minutes if your scopes are non-sensitive — 6+ weeks and a paid security audit if you need to read mail.",
+    "blockerType": "scope_review",
+    "difficulty": 4,
+    "readyIn": {
+      "min": "2–3 business days (brand verification only, non-sensitive scopes)",
+      "typical": "~2 weeks (sensitive scopes such as gmail.send)",
+      "worst": "6+ weeks (restricted scopes requiring a tier-3 CASA assessment)"
+    },
+    "claimIds": ["c2", "c3", "c4", "c11"]
+  },
+
+  "criticalPath": [
+    {
+      "action": "Start brand verification and domain ownership verification on day one.",
+      "why": "Brand verification alone takes 2–3 business days and gates everything else, so it should be running while you build.",
+      "claimIds": ["c2"]
+    },
+    {
+      "action": "Pick the narrowest scope that does the job — prefer gmail.send over full mail access.",
+      "why": "Sensitive scopes clear in about 10 business days; restricted scopes drag you into an annual, paid CASA security assessment. The scope you choose decides which timeline you are on.",
+      "claimIds": ["c3", "c9"]
+    },
+    {
+      "action": "If you genuinely need restricted scopes, line up a CASA assessor early.",
+      "why": "The assessment itself runs 2–3 weeks (tier 2) or 4–6 weeks (tier 3) and is billed by a third party, so starting late adds that time to your launch date.",
+      "claimIds": ["c4", "c5"]
+    },
+    {
+      "action": "Write the scope justification before you submit, not during review.",
+      "why": "Justifying each requested scope is the most common source of back-and-forth, and requesting scopes the app does not visibly use gets submissions rejected.",
+      "claimIds": ["c10"]
+    }
+  ],
+
+  "beforeApproval": {
+    "whatWorks": "The app works end to end, but only for a small set of test users, and every one of them sees an \"unverified app\" warning screen before they can continue.",
+    "limits": [
+      "Unverified apps are capped at 100 users.",
+      "That 100-user counter cannot be reset — burning it on testing is permanent.",
+      "Tokens issued while the app is in testing mode expire after 7 days.",
+      "Internal-only Google Workspace apps are exempt from verification entirely."
+    ],
+    "claimIds": ["c6", "c7", "c8"]
+  },
+
+  "steps": [
+    {
+      "title": "Work out which scopes you actually need",
+      "detail": "Map each feature to the narrowest scope that supports it. Sending mail needs gmail.send (sensitive). Reading or modifying mail needs gmail.readonly / gmail.modify / mail.google.com (restricted, and far more expensive in time and money).",
+      "actor": "agent",
+      "estTime": "30 minutes",
+      "claimIds": ["c9", "c3"]
+    },
+    {
+      "title": "Create the Google Cloud project and configure the OAuth consent screen",
+      "detail": "In Google Cloud Console, create a project, enable the Gmail API, and fill in the OAuth consent screen: app name, logo, support email, authorised domains and privacy policy URL.",
+      "actor": "human",
+      "whyHuman": "Requires a signed-in Google Cloud account and acceptance of terms.",
+      "estTime": "30 minutes",
+      "claimIds": ["c2"]
+    },
+    {
+      "title": "Verify domain ownership",
+      "detail": "Verify every authorised domain and the redirect URI domain in Google Search Console under the same account that owns the Cloud project.",
+      "actor": "human",
+      "whyHuman": "Requires DNS or registrar access to prove ownership.",
+      "estTime": "1 hour plus DNS propagation",
+      "claimIds": ["c2"]
+    },
+    {
+      "title": "Submit for brand verification",
+      "detail": "Submit the consent screen for brand verification, which checks that the logo, display name, URLs and domain ownership honestly represent the app.",
+      "actor": "human",
+      "whyHuman": "Submitting for review is an account action Google ties to a responsible person.",
+      "estTime": "2–3 business days to clear",
+      "claimIds": ["c2"]
+    },
+    {
+      "title": "Request scope verification with written justification",
+      "detail": "For each sensitive or restricted scope, explain what the app does with the data and record a demo video showing that exact use. Sensitive scopes are reviewed in about 10 business days.",
+      "actor": "human",
+      "whyHuman": "Requires submitting a review request and a demo video from the owning account.",
+      "estTime": "10 business days for sensitive scopes",
+      "claimIds": ["c2", "c10"]
+    },
+    {
+      "title": "Complete the CASA security assessment (restricted scopes only)",
+      "detail": "Google's Trust and Safety team tells you when to begin. You engage an independent assessor, pay their fee, and repeat the assessment annually for as long as you use restricted scopes.",
+      "actor": "human",
+      "whyHuman": "Involves a commercial engagement, payment, and giving an assessor access to your environment.",
+      "estTime": "2–3 weeks (tier 2) or 4–6 weeks (tier 3)",
+      "claimIds": ["c3", "c4", "c5"]
+    }
+  ],
+
+  "config": {
+    "portalUrl": "https://console.cloud.google.com/apis/credentials",
+    "redirectUriNotes": "Use the exact redirect URI shown in your Composio auth config, and make sure its domain is listed as an authorised domain and verified in Search Console. A mismatch between the registered redirect URI and the one Composio sends is the most common cause of a failed callback.",
+    "scopes": [
+      {
+        "name": "https://www.googleapis.com/auth/gmail.send",
+        "purpose": "Send mail as the user. The cheapest path if you only need to send.",
+        "reviewLevel": "sensitive"
+      },
+      {
+        "name": "https://www.googleapis.com/auth/gmail.readonly",
+        "purpose": "Read mail and settings.",
+        "reviewLevel": "restricted"
+      },
+      {
+        "name": "https://www.googleapis.com/auth/gmail.modify",
+        "purpose": "Read, label and modify mail, excluding permanent deletion.",
+        "reviewLevel": "restricted"
+      },
+      {
+        "name": "https://mail.google.com/",
+        "purpose": "Full mailbox access including permanent deletion. Avoid unless genuinely required.",
+        "reviewLevel": "restricted"
+      },
+      {
+        "name": "openid / userinfo.email",
+        "purpose": "Identify the signed-in user.",
+        "reviewLevel": "none"
+      }
+    ],
+    "otherFields": [
+      "App name",
+      "User support email",
+      "App logo",
+      "Application home page",
+      "Privacy policy URL",
+      "Terms of service URL",
+      "Authorised domains",
+      "Developer contact email"
+    ]
+  },
+
+  "review": {
+    "requiredWhen": "Whenever the app requests sensitive or restricted scopes and is used by anyone outside your own Google Workspace organisation. Internal-only Workspace apps are exempt.",
+    "process": [
+      "Brand verification — checks that logo, display name, URLs and domain ownership represent the app honestly.",
+      "Sensitive scope verification — checks that the use of each sensitive scope is neither deceptive nor broader than needed.",
+      "Restricted scope verification — the same check at a higher bar, plus a mandatory CASA security assessment.",
+      "CASA security assessment — performed by an independent third-party assessor, repeated annually."
+    ],
+    "timeline": "Brand verification 2–3 business days; sensitive scope verification about 10 business days; CASA 2–3 weeks (tier 2) or 4–6 weeks (tier 3). Google publishes these as expected times, not guarantees.",
+    "cost": "Verification itself is free. The CASA assessment involves fees payable to the third-party assessor, ranging from $500 to $4,500 USD depending on the app's complexity (Google's own figure, checked 2026-10-20).",
+    "recurring": "Apps using restricted scopes must repeat the CASA security assessment annually.",
+    "claimIds": ["c2", "c3", "c4", "c5", "c8", "c11"]
+  },
+
+  "gotchas": [
+    {
+      "text": "The 100-user cap on unverified apps cannot be reset, so every throwaway test account you authorise is gone permanently.",
+      "claimIds": ["c7"]
+    },
+    {
+      "text": "Tokens issued in testing mode expire after 7 days, which looks like a broken refresh flow if you do not know to expect it.",
+      "claimIds": ["c7"]
+    },
+    {
+      "text": "Requesting scopes your app does not visibly use is a common rejection reason — reviewers check the demo video against the scope list.",
+      "claimIds": ["c10"]
+    },
+    {
+      "text": "Choosing mail.google.com when gmail.send would do converts a roughly two-week review into a 6+ week one with a recurring annual audit.",
+      "claimIds": ["c3", "c9"]
+    },
+    {
+      "text": "Published timelines are expected completion times, not commitments — plan for them to slip.",
+      "claimIds": ["c11"]
+    }
+  ],
+
+  "composioHandoff": [
+    "In the Composio dashboard: Create Auth Config → choose the Gmail toolkit + OAuth2.",
+    "Register the provider app using the redirect URI Composio shows you, and add that domain to your authorised domains in Google Cloud.",
+    "Paste the Client ID and Client Secret from your Google Cloud OAuth client.",
+    "Copy the resulting ac_... auth config id and pass it via auth_configs in your session."
+  ],
+
+  "claims": [
+    {
+      "id": "c1",
+      "text": "Composio offers managed OAuth for the Gmail toolkit.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://docs.composio.dev/toolkits/gmail", "title": "Composio — Gmail toolkit docs" }
+      ]
+    },
+    {
+      "id": "c2",
+      "text": "Google requires three types of verification: brand verification (2–3 business days), sensitive scope verification (10 business days), and restricted scope verification.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://support.google.com/cloud/answer/13463817?hl=en", "title": "OAuth Application Verification FAQ — Google Cloud" }
+      ]
+    },
+    {
+      "id": "c3",
+      "text": "Apps using restricted scopes must additionally complete an annual security assessment based on the Cloud App Security Assessment (CASA) framework.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.google.com/health/app-verification", "title": "App verification — Google for Developers" }
+      ]
+    },
+    {
+      "id": "c4",
+      "text": "The CASA security assessment takes 2–3 weeks for tier-2 applications and 4–6 weeks for tier-3 applications.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.google.com/health/app-verification", "title": "App verification — Google for Developers" }
+      ]
+    },
+    {
+      "id": "c5",
+      "text": "CASA involves fees payable to the third-party assessor ranging from $500 to $4,500 USD, depending on the app's complexity.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.google.com/health/app-verification", "title": "App verification — Google for Developers" }
+      ],
+      "note": "Price checked against Google's own documentation on 2026-10-20. Earlier internal research quoted a narrower third-party range (~$540–$3,000); Google's first-party figure supersedes it. Prices are date-sensitive."
+    },
+    {
+      "id": "c6",
+      "text": "Unverified apps display an \"unverified app\" warning screen to users and are capped at 100 users.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://support.google.com/cloud/answer/13463817?hl=en", "title": "OAuth Application Verification FAQ — Google Cloud" }
+      ]
+    },
+    {
+      "id": "c7",
+      "text": "The 100-user cap on unverified apps cannot be reset, and tokens issued in testing mode expire after 7 days.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://nango.dev/docs/api-integrations/google-shared/google-security-review", "title": "Google security review — Nango docs" }
+      ],
+      "note": "Third-party source (Nango), not Google's own documentation. Treat as practitioner experience rather than policy. The URL cited in earlier internal research now 404s; this is the current location."
+    },
+    {
+      "id": "c8",
+      "text": "Internal-only Google Workspace apps are exempt from the verification process.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://support.google.com/cloud/answer/13463817?hl=en", "title": "OAuth Application Verification FAQ — Google Cloud" }
+      ]
+    },
+    {
+      "id": "c9",
+      "text": "gmail.send is classified as a sensitive scope, while gmail.readonly, gmail.modify and mail.google.com are restricted scopes.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developers.google.com/health/app-verification", "title": "App verification — Google for Developers" },
+        { "url": "https://support.google.com/cloud/answer/13463817?hl=en", "title": "OAuth Application Verification FAQ — Google Cloud" }
+      ]
+    },
+    {
+      "id": "c10",
+      "text": "Scope justification is the most common source of review back-and-forth, and requesting scopes the app does not demonstrably use leads to rejection.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://developer.nylas.com/docs/provider-guides/google/google-verification-security-assessment-guide/", "title": "Google verification and security assessment guide — Nylas" }
+      ],
+      "note": "Third-party practitioner guidance (Nylas), not a Google policy statement."
+    },
+    {
+      "id": "c11",
+      "text": "Google publishes its verification durations as expected completion times rather than guarantees.",
+      "status": "sourced",
+      "sources": [
+        { "url": "https://support.google.com/cloud/answer/13463817?hl=en", "title": "OAuth Application Verification FAQ — Google Cloud" }
+      ]
+    }
+  ],
+
+  "openQuestions": [
+    "Whether a free CASA tier-2 self-assessment route is still available, and under what conditions — sources disagree and we could not confirm it against Google's own documentation.",
+    "Whether the 100-user cap counts distinct users ever authorised or currently active; Google's FAQ does not say explicitly.",
+    "No seed claim here is 'tested' — nobody on this project has taken a Google app through verification end to end."
+  ]
+}
