@@ -1,5 +1,6 @@
 import { generateGuide } from "@/lib/agent/generate";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { saveGuide } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -33,6 +34,18 @@ export async function GET(request: Request) {
 
       try {
         for await (const event of generateGuide(query)) {
+          // Persisting here rather than from the client keeps the store writable
+          // only by the generator, so no one can POST an arbitrary guide into it.
+          if (event.type === "done") {
+            try {
+              await saveGuide(event.guide);
+            } catch {
+              send({
+                type: "warning",
+                message: "Could not save the guide — the URL will not be shareable.",
+              });
+            }
+          }
           send(event);
         }
       } catch (error) {
