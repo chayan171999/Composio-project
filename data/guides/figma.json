@@ -1,0 +1,214 @@
+{
+  "appName": "Figma",
+  "aliases": [
+    "figma",
+    "figma.com"
+  ],
+  "website": "https://figma.com",
+  "composio": {
+    "managedOAuth": "yes",
+    "whenToBringYourOwn": [
+      "When you need to white-label the OAuth consent screen with your custom branding",
+      "When your application requires enterprise-specific OAuth controls or specialized workspace scopes"
+    ],
+    "claimIds": [
+      "c1"
+    ]
+  },
+  "verdict": {
+    "oneLiner": "Self-serve OAuth2 setup with no required app review process for REST API integrations.",
+    "blockerType": "none",
+    "difficulty": 1,
+    "readyIn": {
+      "min": "5 minutes",
+      "typical": "15 minutes",
+      "worst": "1 hour"
+    },
+    "claimIds": [
+      "c2",
+      "c4",
+      "c6"
+    ]
+  },
+  "criticalPath": [
+    {
+      "action": "Navigate to My Apps in Figma account settings and create a new OAuth app",
+      "why": "Generates the necessary Client ID and Client Secret for OAuth2 operations.",
+      "claimIds": [
+        "c2",
+        "c4"
+      ]
+    },
+    {
+      "action": "Configure OAuth redirect URIs and copy credentials into Composio",
+      "why": "Enables authorization flows between Composio and Figma.",
+      "claimIds": [
+        "c1",
+        "c2"
+      ]
+    }
+  ],
+  "beforeApproval": {
+    "whatWorks": "Full API access and OAuth authentication are functional immediately upon client registration without pre-approval waiting periods.",
+    "limits": [
+      "Standard rate limits apply based on the user's Figma plan level",
+      "Integrations targeting Figma for Government must use api.figma-gov.com instead of api.figma.com"
+    ],
+    "claimIds": [
+      "c3",
+      "c4"
+    ]
+  },
+  "steps": [
+    {
+      "title": "Access Figma Developer Apps",
+      "detail": "Log in to your Figma account, go to Account Settings, and select the 'My apps' section.",
+      "actor": "human",
+      "whyHuman": "Requires user login to a personal or organizational Figma account.",
+      "estTime": "2 minutes",
+      "claimIds": [
+        "c2"
+      ]
+    },
+    {
+      "title": "Register Application",
+      "detail": "Click 'Create a new app', enter your app name, description, and set the Redirect URI provided by Composio or your auth service.",
+      "actor": "human",
+      "whyHuman": "Requires manual entry of app details and redirect URIs in the Figma settings UI.",
+      "estTime": "5 minutes",
+      "claimIds": [
+        "c2"
+      ]
+    },
+    {
+      "title": "Collect Client Credentials",
+      "detail": "Save the registration details and record the generated Client ID and Client Secret.",
+      "actor": "human",
+      "whyHuman": "Client secrets are shown once upon creation and must be recorded securely.",
+      "estTime": "2 minutes",
+      "claimIds": [
+        "c2",
+        "c4"
+      ]
+    }
+  ],
+  "config": {
+    "portalUrl": "https://developers.figma.com/docs/rest-api/",
+    "redirectUriNotes": "Enter the Composio callback URL in your Figma app registration under My apps.",
+    "scopes": [
+      {
+        "name": "file_read",
+        "purpose": "Read file content, layers, nodes, and components",
+        "reviewLevel": "none"
+      }
+    ],
+    "otherFields": [
+      "Client ID",
+      "Client Secret"
+    ]
+  },
+  "review": {
+    "requiredWhen": "No app review is required for standard Figma REST API integrations.",
+    "process": [
+      "Create client app under My apps in Figma settings",
+      "Use Client ID and Client Secret directly in your OAuth flow"
+    ],
+    "timeline": "Figma publishes no official review timeline because standard REST API OAuth apps do not require a review submission.",
+    "cost": "Free",
+    "recurring": "None",
+    "claimIds": [
+      "c6"
+    ]
+  },
+  "gotchas": [
+    {
+      "text": "Integrations accessing Figma for Government accounts must target api.figma-gov.com instead of api.figma.com.",
+      "claimIds": [
+        "c3"
+      ]
+    },
+    {
+      "text": "Figma plugin publishing requirements and review policies are separate from REST API OAuth integrations.",
+      "claimIds": [
+        "c5"
+      ]
+    }
+  ],
+  "composioHandoff": [
+    "Navigate to the Composio Dashboard, select Toolkits, and search for Figma.",
+    "Choose between Composio Managed OAuth or Custom OAuth2.",
+    "If using Custom OAuth2, input the Client ID and Client Secret obtained from Figma My apps.",
+    "Save the setup and initiate account connection."
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "text": "Composio supports Composio-managed OAuth, custom OAuth2, and API Key authentication for the Figma toolkit.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://docs.composio.dev/toolkits/figma",
+          "title": "docs.composio.dev — figma"
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "text": "Figma REST API app registration is managed under My apps within developer account settings.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.figma.com/docs/rest-api/",
+          "title": "developers.figma.com — rest api"
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "text": "The base URL for standard Figma API calls is api.figma.com, whereas Figma for Government uses api.figma-gov.com.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.figma.com/docs/rest-api/",
+          "title": "developers.figma.com — rest api"
+        }
+      ]
+    },
+    {
+      "id": "c4",
+      "text": "Figma supports OAuth2 authentication alongside personal access tokens and plan access tokens.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.figma.com/docs/rest-api/",
+          "title": "developers.figma.com — rest api"
+        }
+      ]
+    },
+    {
+      "id": "c5",
+      "text": "Figma plugin publishing guidelines are separate from REST API integration requirements.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.figma.com/docs/plugins/publishing/",
+          "title": "developers.figma.com — publishing"
+        }
+      ]
+    },
+    {
+      "id": "c6",
+      "text": "Figma does not publish official review timelines or mandatory app review requirements for standard REST API integrations.",
+      "status": "unverified",
+      "sources": [],
+      "note": "Documentation provides no information regarding mandatory review submissions or evaluation timelines for REST API apps."
+    }
+  ],
+  "openQuestions": [
+    "What are the specific grant types and exact scope strings available for Figma REST API OAuth apps?",
+    "Are there specific token lifetimes or refresh token expiration constraints for Figma OAuth access tokens?"
+  ],
+  "slug": "figma",
+  "lastChecked": "2026-10-20",
+  "generatedBy": "agent"
+}

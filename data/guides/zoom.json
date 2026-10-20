@@ -1,0 +1,373 @@
+{
+  "appName": "Zoom",
+  "aliases": [
+    "zoom",
+    "zoom.us",
+    "zoom marketplace",
+    "zoom app marketplace"
+  ],
+  "website": "https://zoom.us",
+  "composio": {
+    "managedOAuth": "yes",
+    "whenToBringYourOwn": [
+      "When publishing a public Zoom Marketplace app under your own branding.",
+      "When requiring custom OAuth scopes beyond standard default integration scopes.",
+      "When managing direct user data retention and mandatory deauthorization webhooks."
+    ],
+    "claimIds": [
+      "c1",
+      "c8",
+      "c13"
+    ]
+  },
+  "verdict": {
+    "oneLiner": "Internal development OAuth is immediate for testing, but external distribution requires a two-phase Marketplace review and security audit.",
+    "blockerType": "scope_review",
+    "difficulty": 3,
+    "readyIn": {
+      "min": "Immediate (Internal)",
+      "typical": "1-2 weeks (Public Marketplace)",
+      "worst": "3-4 weeks"
+    },
+    "claimIds": [
+      "c6",
+      "c7",
+      "c8",
+      "c9"
+    ]
+  },
+  "criticalPath": [
+    {
+      "action": "Ensure developer permissions on Zoom account",
+      "why": "Admin privileges or 'Zoom for developers' role settings are required to access portal options.",
+      "claimIds": [
+        "c2"
+      ]
+    },
+    {
+      "action": "Create General App in Zoom Marketplace",
+      "why": "Generates instant development credentials for account-level OAuth integration.",
+      "claimIds": [
+        "c3",
+        "c5"
+      ]
+    },
+    {
+      "action": "Configure Redirect URIs and Scopes with justifications",
+      "why": "Allow-list Composio redirect URIs and provide compulsory scope justification strings.",
+      "claimIds": [
+        "c12",
+        "c14"
+      ]
+    },
+    {
+      "action": "Submit for Marketplace Operations Review & Security Audit",
+      "why": "Required before external users outside your Zoom account can authorize the application.",
+      "claimIds": [
+        "c7",
+        "c8"
+      ]
+    }
+  ],
+  "beforeApproval": {
+    "whatWorks": "Full functional OAuth testing within the developer's Zoom account using development credentials.",
+    "limits": [
+      "Users outside the developer's Zoom account cannot authorize unapproved beta apps.",
+      "Loopback URIs enforce strict PKCE public client configuration rules.",
+      "Refresh tokens expire in 90 days and rotate on every usage."
+    ],
+    "claimIds": [
+      "c6",
+      "c7",
+      "c11",
+      "c12"
+    ]
+  },
+  "steps": [
+    {
+      "title": "Verify Account Developer Permissions",
+      "detail": "Sign in to Zoom. Ensure account has Owner/Admin permissions or that 'Zoom for developers' view/edit role is active under Roles settings.",
+      "actor": "human",
+      "whyHuman": "Requires authenticated account access and admin settings verification in Zoom web portal.",
+      "estTime": "5 mins",
+      "claimIds": [
+        "c2"
+      ]
+    },
+    {
+      "title": "Create General OAuth Application",
+      "detail": "Navigate to Zoom App Marketplace > Developer > Created apps > Build an app. Select 'General app', choose Admin-managed or User-managed, and create.",
+      "actor": "human",
+      "whyHuman": "Requires selecting app management type and configuring initial app metadata.",
+      "estTime": "5 mins",
+      "claimIds": [
+        "c3",
+        "c4"
+      ]
+    },
+    {
+      "title": "Configure Redirect URLs and Allow List",
+      "detail": "Enter the Composio OAuth redirect URL into Development OAuth Redirect URL and Allow List. Enable PKCE toggle if using 127.0.0.1 loopback URIs.",
+      "actor": "either",
+      "estTime": "5 mins",
+      "claimIds": [
+        "c12"
+      ]
+    },
+    {
+      "title": "Add Scopes and Functional Justifications",
+      "detail": "Select requested API scopes and write mandatory scope justification strings explaining the necessity of each scope.",
+      "actor": "either",
+      "estTime": "10 mins",
+      "claimIds": [
+        "c14"
+      ]
+    },
+    {
+      "title": "Submit for Public Marketplace Distribution (Optional)",
+      "detail": "Provide Terms of Use, Privacy Policy, Deauthorization webhook endpoint, and submit for Marketplace Operations Review and Security Audit.",
+      "actor": "human",
+      "whyHuman": "Requires entering legal terms, operational links, and security compliance details.",
+      "estTime": "30 mins",
+      "claimIds": [
+        "c8",
+        "c13"
+      ]
+    }
+  ],
+  "config": {
+    "portalUrl": "https://developers.zoom.us/",
+    "redirectUriNotes": "Development redirect URL and allow list must match Composio settings. For local testing, use 127.0.0.1 (not localhost) with PKCE enabled.",
+    "scopes": [
+      {
+        "name": "meeting:read",
+        "purpose": "View meeting details and schedules",
+        "reviewLevel": "app_review"
+      },
+      {
+        "name": "meeting:write",
+        "purpose": "Create and manage Zoom meetings",
+        "reviewLevel": "app_review"
+      },
+      {
+        "name": "user:read",
+        "purpose": "Access basic user profile information",
+        "reviewLevel": "app_review"
+      }
+    ],
+    "otherFields": [
+      "App Management Type (Admin-managed vs User-managed)",
+      "Scope Description Justifications",
+      "Deauthorization Endpoint URL",
+      "Terms of Use URL",
+      "Privacy Policy URL"
+    ]
+  },
+  "review": {
+    "requiredWhen": "Required when distributing the application to external Zoom users outside your account via Zoom App Marketplace.",
+    "process": [
+      "Submit application details and compliance links in Marketplace portal.",
+      "Complete Marketplace Operations Review covering metadata and usability.",
+      "Complete Marketplace Security Audit and scope-level security testing."
+    ],
+    "timeline": "No official review SLA timeline published in Zoom developer documentation.",
+    "cost": "Free",
+    "recurring": "Continuous compliance monitoring and data deauthorization compliance.",
+    "claimIds": [
+      "c8",
+      "c9",
+      "c13"
+    ]
+  },
+  "gotchas": [
+    {
+      "text": "Developer link in Marketplace header does not render unless 'Zoom for developers' permission is enabled for the account.",
+      "claimIds": [
+        "c2"
+      ]
+    },
+    {
+      "text": "Refresh tokens rotate on every usage call and expire strictly after 90 days; re-using an old refresh token invalidates the session.",
+      "claimIds": [
+        "c11"
+      ]
+    },
+    {
+      "text": "Hostname 'localhost' is rejected for OAuth redirect; loopback IP 127.0.0.1 requires PKCE ('Use Public Client OAuth') to be enabled.",
+      "claimIds": [
+        "c12"
+      ]
+    },
+    {
+      "text": "Developers are legally obligated to process app_deauthorized webhooks and immediately delete stored user data upon receipt.",
+      "claimIds": [
+        "c13"
+      ]
+    }
+  ],
+  "composioHandoff": [
+    "Copy Development Client ID and Client Secret from the Zoom Marketplace app credentials tab.",
+    "Open Composio Dashboard > Integrations > Zoom.",
+    "Select 'Bring Your Own Credentials' (BYOC) and paste Client ID, Client Secret, and configured scopes.",
+    "Save configuration and run test authorization flow."
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "text": "Composio provides managed OAuth support for the Zoom toolkit.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://docs.composio.dev/toolkits/zoom",
+          "title": "docs.composio.dev — zoom"
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "text": "Accessing Zoom developer portal tools requires an account with Owner, Admin, or 'Zoom for developers' role permissions.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/create/",
+          "title": "developers.zoom.us — create"
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "text": "Zoom OAuth integrations are created as General apps within the Zoom App Marketplace developer portal.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/create/",
+          "title": "developers.zoom.us — create"
+        }
+      ]
+    },
+    {
+      "id": "c4",
+      "text": "Zoom app management types include Admin-managed and User-managed, which dictate user data scope accessibility.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/create/",
+          "title": "developers.zoom.us — create"
+        }
+      ]
+    },
+    {
+      "id": "c5",
+      "text": "Zoom generates separate Client ID and Client Secret pairs for development and production environments.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/create/",
+          "title": "developers.zoom.us — create"
+        }
+      ]
+    },
+    {
+      "id": "c6",
+      "text": "Development credentials work immediately for internal testing on the developer's Zoom account.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/create/",
+          "title": "developers.zoom.us — create"
+        }
+      ]
+    },
+    {
+      "id": "c7",
+      "text": "Users outside the developer's Zoom account cannot authorize unapproved beta apps.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/create/",
+          "title": "developers.zoom.us — create"
+        }
+      ]
+    },
+    {
+      "id": "c8",
+      "text": "Publishing an app for external users requires passing Marketplace Operations Review and Marketplace Security Audit.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/distribute/",
+          "title": "developers.zoom.us — distribute"
+        }
+      ]
+    },
+    {
+      "id": "c9",
+      "text": "Zoom does not publish official SLA timelines for the Marketplace review process in public documentation.",
+      "status": "inferred",
+      "sources": [],
+      "note": "Inferred from absence of published SLA timeline figures in official documentation."
+    },
+    {
+      "id": "c10",
+      "text": "OAuth access tokens expire after 1 hour.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/oauth/",
+          "title": "developers.zoom.us — oauth"
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "text": "Refresh tokens expire in 90 days and rotate on every token refresh request.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/oauth/",
+          "title": "developers.zoom.us — oauth"
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "text": "Loopback URIs require PKCE ('Use Public Client OAuth') to be enabled, and hostnames like 'localhost' are rejected.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/oauth/",
+          "title": "developers.zoom.us — oauth"
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "text": "Apps must implement a deauthorization endpoint URL and immediately delete stored user data upon deauthorization events.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/oauth/",
+          "title": "developers.zoom.us — oauth"
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "text": "Every requested OAuth scope requires providing an explicit functional description during app setup.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://developers.zoom.us/docs/integrations/create/",
+          "title": "developers.zoom.us — create"
+        }
+      ]
+    }
+  ],
+  "openQuestions": [
+    "What are the specific REST API endpoint tier rate limits and quotas?",
+    "What are the precise submission SLAs and fees (if any) associated with third-party security audits during Marketplace review?"
+  ],
+  "slug": "zoom",
+  "lastChecked": "2026-10-20",
+  "generatedBy": "agent"
+}

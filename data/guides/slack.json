@@ -1,0 +1,256 @@
+{
+  "appName": "Slack",
+  "aliases": [
+    "slack api",
+    "slack app"
+  ],
+  "website": "https://api.slack.com/",
+  "composio": {
+    "managedOAuth": "yes",
+    "whenToBringYourOwn": [
+      "When your app requires custom sensitive scopes that are not supported by the default managed integration",
+      "When you need to distribute the app on the Slack App Directory under your own brand"
+    ],
+    "claimIds": [
+      "c1"
+    ]
+  },
+  "verdict": {
+    "oneLiner": "Slack uses a standard OAuth 2.0 flow; development and internal testing are immediate, while public distribution requires an app review process.",
+    "blockerType": "none",
+    "difficulty": 2,
+    "readyIn": {
+      "min": "10 minutes",
+      "typical": "1 hour",
+      "worst": "weeks"
+    },
+    "claimIds": [
+      "c2",
+      "c3",
+      "c4"
+    ]
+  },
+  "criticalPath": [
+    {
+      "action": "Register App at API Portal",
+      "why": "Create client credentials and configure OAuth settings for local development.",
+      "claimIds": [
+        "c2"
+      ]
+    },
+    {
+      "action": "Define Initial Scopes",
+      "why": "Determine the minimum permissions required to enable your desired functionality.",
+      "claimIds": [
+        "c3"
+      ]
+    },
+    {
+      "action": "Enable OAuth Redirect URLs",
+      "why": "Necessary to complete the OAuth handshake between your service and Slack.",
+      "claimIds": [
+        "c4"
+      ]
+    },
+    {
+      "action": "Initiate Local Testing",
+      "why": "Verify token exchange and API interactions in a sandbox workspace.",
+      "claimIds": [
+        "c5"
+      ]
+    }
+  ],
+  "beforeApproval": {
+    "whatWorks": "Development apps can be installed immediately within the workspace where they were created without formal review.",
+    "limits": [
+      "Apps are restricted to the workspace where they were created until public verification",
+      "Rate limits apply per API method per workspace"
+    ],
+    "claimIds": [
+      "c5",
+      "c6"
+    ]
+  },
+  "steps": [
+    {
+      "title": "Create Slack App",
+      "detail": "Navigate to the developer portal, click 'Create New App', and define your app name and workspace.",
+      "actor": "human",
+      "whyHuman": "Requires login to the Slack developer dashboard.",
+      "claimIds": [
+        "c2"
+      ]
+    },
+    {
+      "title": "Configure OAuth Settings",
+      "detail": "Under 'OAuth & Permissions', add Redirect URLs and choose Bot or User token scopes.",
+      "actor": "human",
+      "whyHuman": "Requires business-logic decision on app permissions.",
+      "claimIds": [
+        "c4"
+      ]
+    },
+    {
+      "title": "Implement OAuth Flow",
+      "detail": "Redirect users to the Slack authorization URL with your client_id and scopes.",
+      "actor": "human",
+      "whyHuman": "Requires development work to handle the server-side OAuth callback.",
+      "claimIds": [
+        "c4"
+      ]
+    }
+  ],
+  "config": {
+    "portalUrl": "https://api.slack.com/apps/",
+    "redirectUriNotes": "Must use HTTPS; must match exactly between the dashboard setting and the URL passed in the request.",
+    "scopes": [
+      {
+        "name": "channels:read",
+        "purpose": "View public channel info",
+        "reviewLevel": "none"
+      },
+      {
+        "name": "chat:write",
+        "purpose": "Send messages in channels",
+        "reviewLevel": "none"
+      }
+    ],
+    "otherFields": [
+      "client_id",
+      "client_secret",
+      "signing_secret"
+    ]
+  },
+  "review": {
+    "requiredWhen": "Required for public distribution (apps used by more than one workspace).",
+    "process": [
+      "Submit for app verification via the dashboard",
+      "Demonstrate scope necessity to reviewers"
+    ],
+    "timeline": "No official timeline published.",
+    "cost": "None",
+    "recurring": "No",
+    "claimIds": [
+      "c7",
+      "c8"
+    ]
+  },
+  "gotchas": [
+    {
+      "text": "Scopes are additive; you cannot remove scopes from an existing token without revoking and re-authorizing.",
+      "claimIds": [
+        "c9"
+      ]
+    },
+    {
+      "text": "Enterprise grid environments may require 'org-compatible' scopes.",
+      "claimIds": [
+        "c10"
+      ]
+    }
+  ],
+  "composioHandoff": [
+    "Navigate to the Composio dashboard",
+    "Select the Slack integration",
+    "Input your Client ID and Client Secret if you are not using managed authentication"
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "text": "Composio provides a managed OAuth toolkit for Slack.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://docs.composio.dev/toolkits/slack",
+          "title": "Composio — slack toolkit docs"
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "text": "Slack apps must be created and configured via the official developer portal.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://api.slack.com/apps/",
+          "title": "api.slack.com — apps"
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "text": "Slack applications require specific scopes to access Web API methods.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://docs.slack.dev/reference/scopes",
+          "title": "docs.slack.dev — scopes"
+        }
+      ]
+    },
+    {
+      "id": "c4",
+      "text": "OAuth 2.0 configuration requires specifying redirect URLs and requested scopes.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://docs.slack.dev/authentication/installing-with-oauth",
+          "title": "docs.slack.dev — installing with oauth"
+        }
+      ]
+    },
+    {
+      "id": "c5",
+      "text": "Apps can be tested within the development workspace without public review.",
+      "status": "inferred",
+      "sources": [],
+      "note": "Inferred from the standard Slack practice of allowing workspace-specific app development prior to public distribution."
+    },
+    {
+      "id": "c6",
+      "text": "Slack enforces rate limits per API method and per workspace.",
+      "status": "sourced",
+      "sources": [
+        {
+          "url": "https://docs.slack.dev/apis/web-api/rate-limits",
+          "title": "docs.slack.dev — rate limits"
+        }
+      ]
+    },
+    {
+      "id": "c7",
+      "text": "Public distribution of a Slack app requires completing the App Review process.",
+      "status": "inferred",
+      "sources": [],
+      "note": "Common knowledge regarding Slack distribution requirements."
+    },
+    {
+      "id": "c8",
+      "text": "Slack does not provide a guaranteed public review timeline.",
+      "status": "unverified",
+      "sources": [],
+      "note": "No public documentation confirms a specific service level agreement for app reviews."
+    },
+    {
+      "id": "c9",
+      "text": "Scopes are additive and cannot be reduced without token revocation.",
+      "status": "unverified",
+      "sources": [],
+      "note": "Observed developer behavior in Slack's OAuth implementation."
+    },
+    {
+      "id": "c10",
+      "text": "Enterprise Grid installations may require organization-specific compatibility for scopes.",
+      "status": "unverified",
+      "sources": [],
+      "note": "Standard caution for enterprise-grade Slack app development."
+    }
+  ],
+  "openQuestions": [
+    "Current average approval time for Slack App Directory review.",
+    "Specific documentation confirming the additive nature of tokens."
+  ],
+  "slug": "slack",
+  "lastChecked": "2026-10-20",
+  "generatedBy": "agent"
+}

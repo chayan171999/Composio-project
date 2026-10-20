@@ -28,18 +28,24 @@ export function getSeedGuide(slug: string): Guide | undefined {
   return loadSeedGuides().find((guide) => guide.slug === slug);
 }
 
-// Seed guides are hand-verified, so they win over a generated guide of the same slug.
+// data/guides holds two kinds of file: hand-verified seeds, and agent guides
+// bundled so the deployed library is not empty. A seed always wins its slug. A
+// bundled agent guide is only a cached copy, so regenerating one supersedes it —
+// otherwise "Regenerate" would write to the store and change nothing on screen.
 export async function getGuide(slug: string): Promise<Guide | null> {
-  return getSeedGuide(slug) ?? (await getStoredGuide(slug));
+  const bundled = getSeedGuide(slug);
+  if (bundled?.generatedBy === "seed") return bundled;
+  return (await getStoredGuide(slug)) ?? bundled ?? null;
 }
 
 export async function getAllGuides(): Promise<Guide[]> {
-  const seeds = loadSeedGuides();
-  const seedSlugs = new Set(seeds.map((guide) => guide.slug));
-  const stored = (await listStoredGuides()).filter(
-    (guide) => !seedSlugs.has(guide.slug),
-  );
-  return [...seeds, ...stored];
+  const bySlug = new Map<string, Guide>();
+  for (const guide of loadSeedGuides()) bySlug.set(guide.slug, guide);
+  for (const guide of await listStoredGuides()) {
+    if (bySlug.get(guide.slug)?.generatedBy === "seed") continue;
+    bySlug.set(guide.slug, guide);
+  }
+  return [...bySlug.values()];
 }
 
 function domainOf(value: string): string {
