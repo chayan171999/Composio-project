@@ -12,9 +12,12 @@ import type { Claim } from "@/lib/schema";
 export default function ClaimBadges({
   claimIds,
   claims,
+  checkedOn,
 }: {
   claimIds: string[];
   claims: Claim[];
+  /** When the guide was last checked — "sourced" means little without a date. */
+  checkedOn?: string;
 }) {
   const matched = claimIds
     .map((id) => claims.find((claim) => claim.id === id))
@@ -65,6 +68,11 @@ export default function ClaimBadges({
                 ) : (
                   <span className="block text-xs font-normal text-ink-3">
                     No source — see the note above.
+                  </span>
+                )}
+                {checkedOn && (
+                  <span className="mt-1.5 block text-[10px] font-normal uppercase tracking-wide text-ink-3">
+                    Checked {checkedOn}
                   </span>
                 )}
               </span>

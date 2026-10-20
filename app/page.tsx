@@ -34,18 +34,25 @@ export default async function Home({
 
       <div className="mt-7">
         <SearchBox defaultValue={query ?? ""} />
+        {/* Live generation is the main feature but was only discoverable by
+            searching for something that happened to miss. */}
+        <p className="mt-2 text-xs text-ink-3">
+          Not in the library? An agent researches the provider&apos;s own docs and
+          writes the guide live — about a minute.
+        </p>
       </div>
 
       {query && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-edge bg-sunken px-4 py-3 text-sm">
-          <span className="text-ink-2">
+        <div className="mt-5 rounded-lg border border-edge bg-sunken px-4 py-4">
+          <p className="text-sm text-ink-2">
             No guide yet for <span className="font-medium text-ink">{query}</span>.
-          </span>
+          </p>
           <Link
             href={`/generate?q=${encodeURIComponent(query)}`}
-            className="font-medium text-accent underline decoration-accent/30 underline-offset-2 hover:decoration-accent"
+            className="mt-3 inline-flex items-center gap-2 rounded-md bg-ink px-3 py-2 text-xs font-medium text-bg transition-opacity hover:opacity-85"
           >
-            Generate one with the agent →
+            Research it and build a guide
+            <span className="opacity-60">~1 min</span>
           </Link>
         </div>
       )}

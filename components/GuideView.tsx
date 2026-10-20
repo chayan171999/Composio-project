@@ -10,7 +10,10 @@ export default function GuideView({ guide }: { guide: Guide }) {
     <article>
       <Verdict guide={guide} />
 
-      <Section title="Do you need your own OAuth app?">
+      <Section
+        title="When to bring your own"
+        hint="Reasons Composio's managed OAuth may not be enough"
+      >
         <ul className="space-y-2">
           {guide.composio.whenToBringYourOwn.map((reason) => (
             <li key={reason} className="flex gap-2.5 text-sm text-ink-2">
@@ -19,7 +22,7 @@ export default function GuideView({ guide }: { guide: Guide }) {
             </li>
           ))}
         </ul>
-        <Refs claimIds={guide.composio.claimIds} claims={claims} />
+        <Refs claimIds={guide.composio.claimIds} claims={claims} checkedOn={guide.lastChecked} />
       </Section>
 
       <Section title="Start today" hint="Run these in parallel with any approval wait">
@@ -32,7 +35,7 @@ export default function GuideView({ guide }: { guide: Guide }) {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-ink">
                   {item.action}
-                  <ClaimBadges claimIds={item.claimIds} claims={claims} />
+                  <ClaimBadges claimIds={item.claimIds} claims={claims} checkedOn={guide.lastChecked} />
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-ink-2">{item.why}</p>
               </div>
@@ -53,7 +56,7 @@ export default function GuideView({ guide }: { guide: Guide }) {
             </li>
           ))}
         </ul>
-        <Refs claimIds={guide.beforeApproval.claimIds} claims={claims} />
+        <Refs claimIds={guide.beforeApproval.claimIds} claims={claims} checkedOn={guide.lastChecked} />
       </Section>
 
       <Section title="Steps">
@@ -70,7 +73,7 @@ export default function GuideView({ guide }: { guide: Guide }) {
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <p className="text-sm font-medium text-ink">
                   {step.title}
-                  <ClaimBadges claimIds={step.claimIds} claims={claims} />
+                  <ClaimBadges claimIds={step.claimIds} claims={claims} checkedOn={guide.lastChecked} />
                 </p>
                 <span
                   className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
@@ -168,8 +171,12 @@ export default function GuideView({ guide }: { guide: Guide }) {
       </Section>
 
       <Section title="Review &amp; approval">
-        <p className="text-sm leading-relaxed text-ink-2">
-          <span className="text-ink-3">Required when </span>
+        {/* A bare "Required when " prefix read as "Required when Never, for
+            standard OAuth Apps" on guides whose answer is "never". */}
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-3">
+          When it applies
+        </p>
+        <p className="mt-1 text-sm leading-relaxed text-ink-2">
           {guide.review.requiredWhen}
         </p>
         <ol className="mt-3 space-y-2">
@@ -185,7 +192,7 @@ export default function GuideView({ guide }: { guide: Guide }) {
           <Fact label="Cost" value={guide.review.cost} />
           <Fact label="Recurring" value={guide.review.recurring} />
         </div>
-        <Refs claimIds={guide.review.claimIds} claims={claims} />
+        <Refs claimIds={guide.review.claimIds} claims={claims} checkedOn={guide.lastChecked} />
       </Section>
 
       <Section title="Gotchas">
@@ -197,7 +204,7 @@ export default function GuideView({ guide }: { guide: Guide }) {
             >
               <span>
                 {gotcha.text}
-                <ClaimBadges claimIds={gotcha.claimIds} claims={claims} />
+                <ClaimBadges claimIds={gotcha.claimIds} claims={claims} checkedOn={guide.lastChecked} />
               </span>
             </li>
           ))}
@@ -219,7 +226,7 @@ export default function GuideView({ guide }: { guide: Guide }) {
         <ul className="divide-y divide-edge rounded-lg border border-edge">
           {claims.map((claim) => (
             <li key={claim.id} className="flex gap-3 p-3">
-              <ClaimBadges claimIds={[claim.id]} claims={claims} />
+              <ClaimBadges claimIds={[claim.id]} claims={claims} checkedOn={guide.lastChecked} />
               <div className="min-w-0 flex-1">
                 <p className="text-sm leading-relaxed text-ink-2">{claim.text}</p>
                 {claim.sources.length > 0 && (
@@ -278,8 +285,31 @@ const STAGES = (min: string, typical: string, worst: string, midTone: string) =>
   { k: "worst", v: worst, c: "text-risk" },
 ];
 
+function ownAppAnswer(managed: Guide["composio"]["managedOAuth"]) {
+  if (managed === "no") {
+    return {
+      answer: "Yes",
+      detail: "Composio has no managed OAuth for this toolkit, so your own app is the only route.",
+      tone: "text-warn",
+    };
+  }
+  if (managed === "unknown") {
+    return {
+      answer: "Unclear",
+      detail: "Composio's managed status could not be confirmed — check the evidence below.",
+      tone: "text-ink-2",
+    };
+  }
+  return {
+    answer: "Only if you need to",
+    detail: "Composio manages OAuth for this toolkit; bring your own for the reasons below.",
+    tone: "text-ok",
+  };
+}
+
 function Verdict({ guide }: { guide: Guide }) {
   const tone = BLOCKER_TONE[guide.verdict.blockerType];
+  const own = ownAppAnswer(guide.composio.managedOAuth);
   const { min, typical, worst } = guide.verdict.readyIn;
 
   return (
@@ -295,7 +325,7 @@ function Verdict({ guide }: { guide: Guide }) {
 
       <h1 className="mt-3 text-balance text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
         {guide.verdict.oneLiner}
-        <ClaimBadges claimIds={guide.verdict.claimIds} claims={guide.claims} />
+        <ClaimBadges claimIds={guide.verdict.claimIds} claims={guide.claims} checkedOn={guide.lastChecked} />
       </h1>
 
       <div className="mt-6">
@@ -349,8 +379,17 @@ function Verdict({ guide }: { guide: Guide }) {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-edge pt-4 text-sm">
-        <div className="flex items-center gap-2">
+      {/* The spec's first question is "do I even need my own OAuth app?" — the raw
+          managed-OAuth flag stated a fact without answering it. */}
+      <div className="mt-6 border-t border-edge pt-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-3">
+          Do you need your own OAuth app?
+        </p>
+        <p className="mt-1 text-sm">
+          <span className={`font-semibold ${own.tone}`}>{own.answer}</span>
+          <span className="text-ink-2"> — {own.detail}</span>
+        </p>
+        <div className="mt-3 flex items-center gap-2 text-sm">
           <span className="text-ink-3">Difficulty</span>
           <span className="flex gap-1" aria-label={`${guide.verdict.difficulty} of 5`}>
             {[1, 2, 3, 4, 5].map((n) => (
@@ -362,15 +401,8 @@ function Verdict({ guide }: { guide: Guide }) {
               />
             ))}
           </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-ink-3">Composio managed OAuth</span>
-          <span
-            className={`font-medium ${
-              guide.composio.managedOAuth === "yes" ? "text-ok" : "text-ink-2"
-            }`}
-          >
-            {guide.composio.managedOAuth}
+          <span className="text-ink-3">
+            {guide.verdict.difficulty}/5 to set up
           </span>
         </div>
       </div>
@@ -409,12 +441,20 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Refs({ claimIds, claims }: { claimIds: string[]; claims: Guide["claims"] }) {
+function Refs({
+  claimIds,
+  claims,
+  checkedOn,
+}: {
+  claimIds: string[];
+  claims: Guide["claims"];
+  checkedOn?: string;
+}) {
   if (claimIds.length === 0) return null;
   return (
     <p className="mt-3 text-xs text-ink-3">
       Evidence
-      <ClaimBadges claimIds={claimIds} claims={claims} />
+      <ClaimBadges claimIds={claimIds} claims={claims} checkedOn={checkedOn} />
     </p>
   );
 }
