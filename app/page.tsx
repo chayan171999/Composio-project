@@ -49,7 +49,7 @@ export default async function Home({
           </p>
           <Link
             href={`/generate?q=${encodeURIComponent(query)}`}
-            className="mt-3 inline-flex items-center gap-2 rounded-md bg-ink px-3 py-2 text-xs font-medium text-bg transition-opacity hover:opacity-85"
+            className="mt-3 inline-flex items-center gap-2 rounded-md bg-ink px-3.5 py-2.5 text-sm font-medium text-bg transition-[transform,filter] duration-100 hover:brightness-110 active:translate-y-px active:brightness-95"
           >
             Research it and build a guide
             <span className="opacity-60">~1 min</span>

@@ -6,7 +6,7 @@ import { guideToMarkdown } from "@/lib/markdown";
 import type { Guide } from "@/lib/schema";
 
 const BTN =
-  "rounded-md border border-edge bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-2 transition-colors hover:border-edge-strong hover:text-ink";
+  "rounded-md border border-edge bg-surface px-3 py-2 text-xs font-medium text-ink-2 transition-[color,border-color,background-color,transform] duration-100 hover:border-edge-strong hover:bg-sunken hover:text-ink active:translate-y-px";
 
 export default function GuideActions({ guide }: { guide: Guide }) {
   const [copied, setCopied] = useState<"url" | "markdown" | null>(null);

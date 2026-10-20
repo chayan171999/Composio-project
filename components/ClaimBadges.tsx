@@ -34,7 +34,7 @@ export default function ClaimBadges({
             <button
               type="button"
               aria-label={`${tone.label}: ${claim.text}`}
-              className={`nums cursor-help rounded px-1 text-[10px] font-semibold leading-4 ${tone.chip}`}
+              className={`nums rounded px-1 text-[10px] font-semibold leading-4 ${tone.chip} transition-[filter] hover:brightness-95`}
             >
               {claim.id.replace(/^c/, "")}
             </button>
