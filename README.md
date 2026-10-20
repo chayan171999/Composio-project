@@ -148,6 +148,14 @@ the first one was honest.
 with the date, and the evidence is there to audit, but only one has been verified
 line-by-line against its sources.
 
+**The model split is measured on one side only.** Running the whole pipeline on
+Flash-Lite was compared against Flash on the same app, and it was clearly worse:
+5 sourced claims against 9, with facts marked `unverified` that Flash cited
+correctly from the same pages. That is why only the mechanical URL-discovery step
+runs on Flash-Lite. The current split has **not** been compared against the
+all-Flash baseline — quota ran out mid-run — so it is reasoned from that
+measurement rather than verified end to end.
+
 **Agent/human step classification is the model's judgement.** It follows an
 explicit rule — anything needing login, 2FA, CAPTCHA, legal entity details,
 payment or a review submission is human — but it is not verified per step.

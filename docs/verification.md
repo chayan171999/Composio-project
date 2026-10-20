@@ -70,6 +70,38 @@ rejected and sent back for one repair pass:
 - A `sourced` claim must cite at least one URL, and that URL must be one the agent
   actually retrieved.
 
+## Model selection
+
+**Flash-Lite was measured and rejected for the quality-critical steps.** The same
+app (Slack) was generated twice, once entirely on `gemini-3.5-flash` and once
+entirely on `gemini-3.1-flash-lite`:
+
+| | Flash | Flash-Lite |
+| --- | --- | --- |
+| Sourced claims | 9 | 5 |
+| Inferred / unverified | 1 | 5 |
+| Steps / gotchas | 4 / 3 | 3 / 2 |
+| Time | 72s | 50s |
+
+Flash-Lite was faster but produced vaguer claims, and marked at least one fact
+(`scopes are additive and cannot be reduced without token revocation`)
+`unverified` that Flash cited correctly from the same page — it left evidence on
+the table. It failed safely rather than fabricating, but the guides were thinner.
+
+URL discovery now runs on Flash-Lite, whose free tier is far larger (~500
+requests/day against ~20), while reading and synthesis stay on Flash.
+
+**This split has not been verified end to end.** A run on the current
+configuration got through discovery on Flash-Lite and page-reading on Flash — and
+correctly flagged two 404s — before Flash's daily quota ran out at the synthesis
+call. So the split is known to work mechanically, but its output has never been
+compared against the all-Flash baseline. Closing this needs roughly three Flash
+calls in a fresh quota window.
+
+**Free-tier quota is scoped to the Google project, not the API key.** Quota was
+observed already exhausted on a newly issued key, so rotating keys does not
+reclaim it.
+
 ## Known gaps
 
 - **No seed claim is marked `tested`.** Nobody on this project has registered a test
