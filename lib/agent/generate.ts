@@ -22,7 +22,13 @@ import {
 } from "./prompts";
 import type { ProgressEvent } from "./types";
 
+// Flash-Lite's free tier allows roughly 500 requests/day against Flash's ~20, so the
+// cheap model handles listing candidate URLs. Reading those pages and labelling each
+// claim's evidence stays on Flash: measured side by side on the same app, Flash-Lite
+// produced 5 sourced claims where Flash produced 9, and marked facts "unverified"
+// that Flash correctly cited.
 const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
+const DISCOVERY_MODEL = process.env.GEMINI_DISCOVERY_MODEL ?? "gemini-3.1-flash-lite";
 const DISCOVERY_MAX_TOKENS = 4000;
 const RESEARCH_MAX_TOKENS = 16000;
 const SYNTHESIS_MAX_TOKENS = 32000;
@@ -285,7 +291,7 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
     "Discovery",
     (signal) =>
       ai.models.generateContent({
-        model: MODEL,
+        model: DISCOVERY_MODEL,
         contents: discoveryPrompt(query),
         config: {
           systemInstruction: DISCOVERY_SYSTEM,
