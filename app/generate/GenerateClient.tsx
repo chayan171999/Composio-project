@@ -5,7 +5,7 @@ import GuideView from "@/components/GuideView";
 import type { Guide } from "@/lib/schema";
 import type { ProgressEvent } from "@/lib/agent/types";
 
-type Line = { kind: "stage" | "search" | "warning"; text: string };
+type Line = { kind: "stage" | "fetch" | "warning"; text: string; ok?: boolean };
 
 export default function GenerateClient({ query }: { query: string }) {
   const [lines, setLines] = useState<Line[]>([]);
@@ -50,8 +50,11 @@ export default function GenerateClient({ query }: { query: string }) {
               setGuide(event.guide);
             } else if (event.type === "error") {
               setError(event.message);
-            } else if (event.type === "search") {
-              setLines((prev) => [...prev, { kind: "search", text: event.query }]);
+            } else if (event.type === "fetch") {
+              setLines((prev) => [
+                ...prev,
+                { kind: "fetch", text: event.url, ok: event.ok },
+              ]);
             } else {
               setLines((prev) => [...prev, { kind: event.type, text: event.message }]);
             }
@@ -76,10 +79,26 @@ export default function GenerateClient({ query }: { query: string }) {
             {lines.map((line, i) => (
               <li key={i} className="flex gap-2">
                 <span className="text-gray-400">
-                  {line.kind === "search" ? "🔎" : line.kind === "warning" ? "⚠️" : "•"}
+                  {line.kind === "fetch"
+                    ? line.ok === undefined
+                      ? "🔎"
+                      : line.ok
+                        ? "✅"
+                        : "❌"
+                    : line.kind === "warning"
+                      ? "⚠️"
+                      : "•"}
                 </span>
-                <span className={line.kind === "warning" ? "text-amber-700" : "text-gray-700"}>
-                  {line.kind === "search" ? `Searching: ${line.text}` : line.text}
+                <span
+                  className={
+                    line.kind === "warning"
+                      ? "text-amber-700"
+                      : line.kind === "fetch"
+                        ? "break-all font-mono text-xs text-gray-600"
+                        : "text-gray-700"
+                  }
+                >
+                  {line.text}
                 </span>
               </li>
             ))}

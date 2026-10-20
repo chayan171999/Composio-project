@@ -12,8 +12,8 @@ export async function GET(request: Request) {
   if (query.length > 100) {
     return new Response("Query too long", { status: 400 });
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return new Response("ANTHROPIC_API_KEY is not configured", { status: 503 });
+  if (!process.env.GEMINI_API_KEY) {
+    return new Response("GEMINI_API_KEY is not configured", { status: 503 });
   }
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";

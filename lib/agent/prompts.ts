@@ -1,8 +1,23 @@
+import type { Source } from "@/lib/schema";
 import type { ComposioCheck } from "./types";
+
+export const DISCOVERY_SYSTEM = `You know where official developer documentation lives. Given an app or company name, list the most likely URLs of its official OAuth / app-registration documentation.
+
+Rules:
+- Only the provider's own documentation domains (e.g. docs.github.com, api.slack.com, developers.google.com). No blogs, no aggregators, no Stack Overflow.
+- Prefer stable, canonical documentation paths over deep links that churn.
+- Cover these topics, one URL each where you can: creating/registering an OAuth app, the OAuth scopes reference, the app review or verification policy, rate limits, and the developer portal itself.
+- Give 5 to 8 URLs, most likely to be correct first. Real URLs only — if you are unsure of an exact path, give the documentation section's index page rather than inventing a deep link.`;
+
+export function discoveryPrompt(query: string): string {
+  return `App or company: "${query}"
+
+List the official documentation URLs to read.`;
+}
 
 export const RESEARCH_SYSTEM = `You research what it takes for a developer to register their own OAuth app with a third-party provider, so they can use it with Composio instead of Composio's managed OAuth.
 
-Use web search to find official provider documentation. Research, in priority order:
+Read the supplied URLs and research, in priority order:
 1. The provider's developer portal URL and the exact steps/fields to register an OAuth app.
 2. The scopes reference: which scopes exist, and which ones trigger a review, verification, or security assessment.
 3. The app review / verification / business-verification policy: what triggers it, the process, published timelines, cost, and any recurring obligation (annual reassessment, data-use checkup).
@@ -10,18 +25,25 @@ Use web search to find official provider documentation. Research, in priority or
 5. Known gotchas developers hit.
 
 Rules:
-- Official provider documentation beats blogs and third-party write-ups. Third-party sources are allowed but you must say they are third-party.
-- Record the exact URL for every factual statement. Write source lines as: SOURCE: <url> | <page title>
+- Base every factual statement on a page you actually read. Record its exact URL as: SOURCE: <url> | <page title>
+- If a page could not be retrieved, do not guess at its contents. Say which topics you could not cover.
 - If the provider publishes NO timeline, say "no official timeline published" explicitly. Do not invent or average one. Anecdotal figures must be labelled anecdotal and attributed.
 - Flag date-sensitive facts (prices, timelines, program names) with the date the page showed.
 - If you cannot find something, say so plainly. Gaps are more useful than guesses.
 
 Output a compact research brief in plain markdown. No preamble, no closing summary.`;
 
-export function researchPrompt(query: string, composio: ComposioCheck): string {
+export function researchPrompt(
+  query: string,
+  composio: ComposioCheck,
+  urls: string[],
+): string {
   return `Research the OAuth app registration path for: "${query}"
 
-Deterministic Composio check already performed (do not re-derive it, but do verify the managed-OAuth status against the docs page if one is given):
+Read these pages:
+${urls.map((url) => `- ${url}`).join("\n")}
+
+Deterministic Composio check already performed (do not re-derive it):
 ${composio.detail}
 
 Produce the research brief now.`;
@@ -37,7 +59,7 @@ EVIDENCE
 - status "inferred" = your reasoning from sourced facts. Requires a note explaining the inference. No source required.
 - status "unverified" = you could not confirm it and no source supports it. Requires a note. No source required.
 - NEVER use status "tested". Nothing here was tested by a human.
-- Only cite URLs that appear in the research brief. Do not invent URLs or page titles.
+- Cite ONLY URLs from the RETRIEVED SOURCES list given below, copied exactly. Any other URL is rejected by validation, including URLs that appear in the research brief but not in that list. Do not invent URLs or page titles.
 - Every claimIds array elsewhere in the guide must reference ids that exist in "claims".
 
 TIMELINES
@@ -65,6 +87,7 @@ export function synthesisPrompt(
   query: string,
   composio: ComposioCheck,
   brief: string,
+  sources: Source[],
 ): string {
   return `Developer searched for: "${query}"
 
@@ -73,6 +96,13 @@ status: ${composio.managedOAuth}
 method: ${composio.method}
 ${composio.detail}
 ${composio.source ? `source: ${composio.source.url} | ${composio.source.title}` : "source: none"}
+
+RETRIEVED SOURCES (the only URLs you may cite, copy them exactly):
+${
+  sources.length > 0
+    ? sources.map((source) => `- ${source.url} | ${source.title}`).join("\n")
+    : "(none retrieved — every claim must be \"inferred\" or \"unverified\", with no sources)"
+}
 
 RESEARCH BRIEF
 ---

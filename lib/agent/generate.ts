@@ -1,5 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import {
   actorSchema,
@@ -9,27 +8,31 @@ import {
   reviewLevelSchema,
   sourceSchema,
   type Guide,
+  type Source,
 } from "@/lib/schema";
 import { checkComposio, toolkitSlugCandidates } from "./composio";
 import {
+  DISCOVERY_SYSTEM,
   RESEARCH_SYSTEM,
   SYNTHESIS_SYSTEM,
+  discoveryPrompt,
   repairPrompt,
   researchPrompt,
   synthesisPrompt,
 } from "./prompts";
 import type { ProgressEvent } from "./types";
 
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5-5";
-const MAX_SEARCHES = 6;
-const MAX_RESEARCH_TURNS = 4;
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
+const DISCOVERY_MAX_TOKENS = 4000;
 const RESEARCH_MAX_TOKENS = 16000;
-const SYNTHESIS_MAX_TOKENS = 24000;
-const WALL_CLOCK_MS = 120_000;
+const SYNTHESIS_MAX_TOKENS = 32000;
+const MAX_URLS = 8;
+const RETRY_ATTEMPTS = 4;
+const RETRY_BASE_MS = 2000;
 
-// zodOutputFormat turns this into a JSON Schema, which cannot express refinements,
-// so this mirrors guideSchema without them. The result is re-validated against the
-// real guideSchema afterwards.
+// Mirrors guideSchema minus the fields set in code, and without refinements —
+// JSON Schema cannot express those. The result is re-validated against the real
+// guideSchema afterwards.
 const agentGuideSchema = z.object({
   appName: z.string(),
   aliases: z.array(z.string()),
@@ -59,8 +62,8 @@ const agentGuideSchema = z.object({
       title: z.string(),
       detail: z.string(),
       actor: actorSchema,
-      whyHuman: z.string().nullable(),
-      estTime: z.string().nullable(),
+      whyHuman: z.string().optional(),
+      estTime: z.string().optional(),
       claimIds: z.array(z.string()),
     }),
   ),
@@ -92,7 +95,7 @@ const agentGuideSchema = z.object({
       text: z.string(),
       status: claimStatusSchema,
       sources: z.array(sourceSchema),
-      note: z.string().nullable(),
+      note: z.string().optional(),
     }),
   ),
   openQuestions: z.array(z.string()),
@@ -100,12 +103,71 @@ const agentGuideSchema = z.object({
 
 type AgentGuide = z.infer<typeof agentGuideSchema>;
 
+// Gemini's responseJsonSchema rejects $schema and additionalProperties.
+function stripUnsupportedKeywords(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(stripUnsupportedKeywords);
+  if (node && typeof node === "object") {
+    return Object.fromEntries(
+      Object.entries(node as Record<string, unknown>)
+        .filter(([key]) => key !== "$schema" && key !== "additionalProperties")
+        .map(([key, value]) => [key, stripUnsupportedKeywords(value)]),
+    );
+  }
+  return node;
+}
+
+const responseJsonSchema = stripUnsupportedKeywords(z.toJSONSchema(agentGuideSchema));
+
 function slugify(value: string): string {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
+}
+
+const discoverySchema = z.object({
+  urls: z.array(z.object({ url: z.string(), topic: z.string() })),
+});
+
+const discoveryJsonSchema = stripUnsupportedKeywords(z.toJSONSchema(discoverySchema));
+
+// The free tier returns 503 UNAVAILABLE ("high demand") and 429 often enough that a
+// single attempt frequently fails. Both are transient here, unlike the hard 429 that
+// googleSearch grounding returns for having no free quota at all.
+async function withRetry<T>(
+  label: string,
+  call: () => Promise<T>,
+  onRetry: (message: string) => void,
+): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
+    try {
+      return await call();
+    } catch (error) {
+      lastError = error;
+      const message = String(error instanceof Error ? error.message : error);
+      const retryable = /"code":\s*(503|429)/.test(message);
+      if (!retryable || attempt === RETRY_ATTEMPTS) break;
+
+      const delay = RETRY_BASE_MS * 2 ** (attempt - 1);
+      onRetry(`${label} hit a transient error — retrying in ${delay / 1000}s…`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
+function titleFromUrl(url: string): string {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const last = pathname.split("/").filter(Boolean).pop();
+    return last ? `${hostname} — ${last.replace(/[-_]/g, " ")}` : hostname;
+  } catch {
+    return url;
+  }
 }
 
 function assemble(draft: AgentGuide): Guide {
@@ -118,19 +180,10 @@ function assemble(draft: AgentGuide): Guide {
       ...draft.verdict,
       difficulty: draft.verdict.difficulty as 1 | 2 | 3 | 4 | 5,
     },
-    steps: draft.steps.map((step) => ({
-      ...step,
-      whyHuman: step.whyHuman ?? undefined,
-      estTime: step.estTime ?? undefined,
-    })),
-    claims: draft.claims.map((claim) => ({
-      ...claim,
-      note: claim.note ?? undefined,
-    })),
   };
 }
 
-function validate(guide: Guide): string[] {
+function validate(guide: Guide, allowedUrls: Set<string>): string[] {
   const errors: string[] = [];
 
   const parsed = guideSchema.safeParse(guide);
@@ -169,128 +222,159 @@ function validate(guide: Guide): string[] {
         `claims.${claim.id}: status "tested" is not allowed for generated guides — nothing here was tested by a human`,
       );
     }
+    for (const source of claim.sources) {
+      if (!allowedUrls.has(source.url)) {
+        errors.push(
+          `claims.${claim.id}: source "${source.url}" was not among the pages actually retrieved — cite only the listed sources`,
+        );
+      }
+    }
   }
 
   return errors;
 }
 
-async function* research(
-  client: Anthropic,
-  query: string,
-  composioDetail: Parameters<typeof researchPrompt>[1],
-): AsyncGenerator<ProgressEvent, string> {
-  const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: researchPrompt(query, composioDetail) },
-  ];
-  const startedAt = Date.now();
-  let brief = "";
-
-  for (let turn = 0; turn < MAX_RESEARCH_TURNS; turn++) {
-    if (Date.now() - startedAt > WALL_CLOCK_MS) {
-      yield { type: "warning", message: "Research time cap reached — synthesising from what was found." };
-      break;
-    }
-
-    const stream = client.messages.stream({
-      model: MODEL,
-      max_tokens: RESEARCH_MAX_TOKENS,
-      system: RESEARCH_SYSTEM,
-      output_config: { effort: "medium" },
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: MAX_SEARCHES }],
-      messages,
-    });
-
-    const pendingSearches = new Map<number, string>();
-    for await (const event of stream) {
-      if (
-        event.type === "content_block_start" &&
-        event.content_block.type === "server_tool_use" &&
-        event.content_block.name === "web_search"
-      ) {
-        pendingSearches.set(event.index, "");
-      } else if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "input_json_delta" &&
-        pendingSearches.has(event.index)
-      ) {
-        pendingSearches.set(
-          event.index,
-          (pendingSearches.get(event.index) ?? "") + event.delta.partial_json,
-        );
-      } else if (event.type === "content_block_stop" && pendingSearches.has(event.index)) {
-        const raw = pendingSearches.get(event.index) ?? "";
-        pendingSearches.delete(event.index);
-        try {
-          const input = JSON.parse(raw);
-          if (typeof input?.query === "string") {
-            yield { type: "search", query: input.query };
-          }
-        } catch {
-          // A truncated tool input just means no progress line for this search.
-        }
-      }
-    }
-
-    const message = await stream.finalMessage();
-    brief = message.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("\n");
-
-    if (message.stop_reason === "pause_turn") {
-      messages.push({ role: "assistant", content: message.content });
-      continue;
-    }
-    break;
-  }
-
-  if (!brief.trim()) throw new Error("Research produced no usable notes.");
-  return brief;
+async function parseJson(text: string): Promise<unknown> {
+  const trimmed = text.trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
+  return JSON.parse(trimmed);
 }
 
 export async function* generateGuide(query: string): AsyncGenerator<ProgressEvent> {
-  const client = new Anthropic();
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
+  const ai = new GoogleGenAI({ apiKey });
 
   yield { type: "stage", message: `Resolving "${query}"…` };
   yield { type: "stage", message: "Checking Composio managed auth…" };
   const composio = await checkComposio(toolkitSlugCandidates(query));
 
-  yield { type: "stage", message: "Researching official documentation…" };
-  const brief = yield* research(client, query, composio);
+  // withRetry cannot yield, so retry notices are buffered and drained after each call.
+  const notices: string[] = [];
+  const note = (message: string) => void notices.push(message);
+  const drain = (): ProgressEvent[] =>
+    notices.splice(0).map((message) => ({ type: "warning", message }));
+
+  yield { type: "stage", message: "Finding official documentation…" };
+  const discovery = await withRetry(
+    "Discovery",
+    () =>
+      ai.models.generateContent({
+        model: MODEL,
+        contents: discoveryPrompt(query),
+        config: {
+          systemInstruction: DISCOVERY_SYSTEM,
+          maxOutputTokens: DISCOVERY_MAX_TOKENS,
+          responseMimeType: "application/json",
+          responseJsonSchema: discoveryJsonSchema,
+        },
+      }),
+    note,
+  );
+  yield* drain();
+
+  const candidates = discoverySchema
+    .parse(await parseJson(discovery.text ?? ""))
+    .urls.map((entry) => entry.url)
+    .filter((url) => /^https?:\/\//.test(url))
+    .slice(0, MAX_URLS);
+
+  if (candidates.length === 0) throw new Error("No candidate documentation URLs found.");
+  for (const url of candidates) yield { type: "fetch", url };
+
+  yield { type: "stage", message: "Reading documentation…" };
+  const research = await withRetry(
+    "Reading documentation",
+    () =>
+      ai.models.generateContent({
+        model: MODEL,
+        contents: researchPrompt(query, composio, candidates),
+        config: {
+          systemInstruction: RESEARCH_SYSTEM,
+          maxOutputTokens: RESEARCH_MAX_TOKENS,
+          tools: [{ urlContext: {} }],
+        },
+      }),
+    note,
+  );
+  yield* drain();
+
+  const brief = research.text ?? "";
+  if (!brief.trim()) throw new Error("Research produced no usable notes.");
+
+  // urlContextMetadata is the authoritative record of what was actually fetched, so
+  // the citation allow-list is built from retrieval successes rather than from the
+  // URLs we asked for.
+  const sources: Source[] = [];
+  for (const entry of research.candidates?.[0]?.urlContextMetadata?.urlMetadata ?? []) {
+    const url = entry.retrievedUrl;
+    const ok = entry.urlRetrievalStatus === "URL_RETRIEVAL_STATUS_SUCCESS";
+    if (!url) continue;
+    yield { type: "fetch", url, ok };
+    if (ok && !sources.some((source) => source.url === url)) {
+      sources.push({ url, title: titleFromUrl(url) });
+    }
+  }
+
+  if (sources.length === 0) {
+    yield {
+      type: "warning",
+      message: "No pages could be retrieved — every claim will be inferred or unverified.",
+    };
+  }
+  const allowedUrls = new Set(sources.map((source) => source.url));
 
   yield { type: "stage", message: "Synthesising the guide…" };
-  const response = await client.messages.parse({
-    model: MODEL,
-    max_tokens: SYNTHESIS_MAX_TOKENS,
-    system: SYNTHESIS_SYSTEM,
-    output_config: { effort: "medium", format: zodOutputFormat(agentGuideSchema) },
-    messages: [{ role: "user", content: synthesisPrompt(query, composio, brief) }],
-  });
+  const synthesisConfig = {
+    systemInstruction: SYNTHESIS_SYSTEM,
+    maxOutputTokens: SYNTHESIS_MAX_TOKENS,
+    responseMimeType: "application/json",
+    responseJsonSchema,
+  };
 
-  let draft = response.parsed_output;
-  if (!draft) throw new Error("The model did not return a parseable guide.");
+  const response = await withRetry(
+    "Synthesis",
+    () =>
+      ai.models.generateContent({
+        model: MODEL,
+        contents: synthesisPrompt(query, composio, brief, sources),
+        config: synthesisConfig,
+      }),
+    note,
+  );
+  yield* drain();
+
+  let draft = agentGuideSchema.parse(await parseJson(response.text ?? ""));
 
   yield { type: "stage", message: "Validating claims…" };
   let guide = assemble(draft);
-  let errors = validate(guide);
+  let errors = validate(guide, allowedUrls);
 
   if (errors.length > 0) {
-    yield { type: "warning", message: `Validation found ${errors.length} problem(s) — repairing.` };
-    const repair = await client.messages.parse({
-      model: MODEL,
-      max_tokens: SYNTHESIS_MAX_TOKENS,
-      system: SYNTHESIS_SYSTEM,
-      output_config: { effort: "medium", format: zodOutputFormat(agentGuideSchema) },
-      messages: [
-        { role: "user", content: synthesisPrompt(query, composio, brief) },
-        { role: "assistant", content: JSON.stringify(draft) },
-        { role: "user", content: repairPrompt(errors.join("\n")) },
-      ],
-    });
-    if (repair.parsed_output) {
-      draft = repair.parsed_output;
+    yield {
+      type: "warning",
+      message: `Validation found ${errors.length} problem(s) — repairing.`,
+    };
+    const repair = await withRetry(
+      "Repair",
+      () =>
+        ai.models.generateContent({
+          model: MODEL,
+          contents: [
+            { role: "user", parts: [{ text: synthesisPrompt(query, composio, brief, sources) }] },
+            { role: "model", parts: [{ text: JSON.stringify(draft) }] },
+            { role: "user", parts: [{ text: repairPrompt(errors.join("\n")) }] },
+          ],
+          config: synthesisConfig,
+        }),
+      note,
+    );
+    yield* drain();
+
+    const repaired = agentGuideSchema.safeParse(await parseJson(repair.text ?? ""));
+    if (repaired.success) {
+      draft = repaired.data;
       guide = assemble(draft);
-      errors = validate(guide);
+      errors = validate(guide, allowedUrls);
     }
   }
 
