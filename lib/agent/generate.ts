@@ -26,13 +26,15 @@ const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 const DISCOVERY_MAX_TOKENS = 4000;
 const RESEARCH_MAX_TOKENS = 16000;
 const SYNTHESIS_MAX_TOKENS = 32000;
-const MAX_URLS = 8;
+const MAX_URLS = 6;
 const RETRY_ATTEMPTS = 4;
 const RETRY_BASE_MS = 2000;
 // Kept under the route's maxDuration so a stuck generation surfaces as a real error
-// rather than an opaque platform timeout.
-const WALL_CLOCK_MS = 150_000;
-const PER_CALL_TIMEOUT_MS = 60_000;
+// rather than an opaque platform timeout. The per-call ceiling has to clear the
+// documentation-reading call, which fetches every candidate page and runs far slower
+// deployed than it does locally.
+const WALL_CLOCK_MS = 165_000;
+const PER_CALL_TIMEOUT_MS = 115_000;
 
 // Mirrors guideSchema minus the fields set in code, and without refinements —
 // JSON Schema cannot express those. The result is re-validated against the real
