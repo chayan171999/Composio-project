@@ -1,64 +1,40 @@
 import ClaimBadges from "@/components/ClaimBadges";
-import { BLOCKER_CHIP, REVIEW_LEVEL_CHIP } from "@/lib/display";
+import { ACTOR_LABEL, BLOCKER_TONE, REVIEW_LEVEL_TONE } from "@/lib/display";
 import type { Guide } from "@/lib/schema";
 
 export default function GuideView({ guide }: { guide: Guide }) {
   const { claims } = guide;
-  const blocker = BLOCKER_CHIP[guide.verdict.blockerType];
+  const tone = BLOCKER_TONE[guide.verdict.blockerType];
 
   return (
-    <article className="text-gray-900">
-      <header className="mb-8 border-b border-gray-200 pb-6">
-        <p className="text-sm font-medium text-gray-500">{guide.appName}</p>
-        <h1 className="mt-1 text-2xl font-semibold">{guide.verdict.oneLiner}</h1>
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <span className={`rounded-full px-2 py-0.5 font-medium ${blocker.className}`}>
-            {blocker.label}
-          </span>
-          <span className="rounded-full border border-gray-300 bg-gray-50 px-2 py-0.5">
-            Difficulty {guide.verdict.difficulty}/5
-          </span>
-          <span className="rounded-full border border-gray-300 bg-gray-50 px-2 py-0.5">
-            Composio managed OAuth: {guide.composio.managedOAuth}
-          </span>
-          <ClaimBadges claimIds={guide.verdict.claimIds} claims={claims} />
-        </div>
-        <dl className="mt-4 grid grid-cols-3 gap-4 text-sm">
-          <div>
-            <dt className="text-gray-500">Min</dt>
-            <dd className="font-medium">{guide.verdict.readyIn.min}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Typical</dt>
-            <dd className="font-medium">{guide.verdict.readyIn.typical}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Worst case</dt>
-            <dd className="font-medium">{guide.verdict.readyIn.worst}</dd>
-          </div>
-        </dl>
-      </header>
+    <article>
+      <Verdict guide={guide} />
 
       <Section title="Do you need your own OAuth app?">
-        <ul className="list-disc space-y-1 pl-5 text-sm">
+        <ul className="space-y-2">
           {guide.composio.whenToBringYourOwn.map((reason) => (
-            <li key={reason}>{reason}</li>
+            <li key={reason} className="flex gap-2.5 text-sm text-ink-2">
+              <span aria-hidden className={`mt-2 size-1 shrink-0 rounded-full bg-current ${tone.fg}`} />
+              <span>{reason}</span>
+            </li>
           ))}
         </ul>
-        <div className="mt-2">
-          <ClaimBadges claimIds={guide.composio.claimIds} claims={claims} />
-        </div>
+        <Refs claimIds={guide.composio.claimIds} claims={claims} />
       </Section>
 
-      <Section title="Start today — critical path">
-        <ol className="space-y-3 text-sm">
+      <Section title="Start today" hint="Run these in parallel with any approval wait">
+        <ol className="space-y-4">
           {guide.criticalPath.map((item, i) => (
-            <li key={item.action} className="flex gap-3">
-              <span className="font-semibold text-gray-400">{i + 1}.</span>
-              <div>
-                <p className="font-medium">{item.action}</p>
-                <p className="text-gray-600">{item.why}</p>
-                <ClaimBadges claimIds={item.claimIds} claims={claims} />
+            <li key={item.action} className="flex gap-3.5">
+              <span className="nums mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-sunken text-xs font-semibold text-ink-2">
+                {i + 1}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-ink">
+                  {item.action}
+                  <ClaimBadges claimIds={item.claimIds} claims={claims} />
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-ink-2">{item.why}</p>
               </div>
             </li>
           ))}
@@ -66,163 +42,226 @@ export default function GuideView({ guide }: { guide: Guide }) {
       </Section>
 
       <Section title="While you wait">
-        <p className="text-sm">{guide.beforeApproval.whatWorks}</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+        <p className="text-sm leading-relaxed text-ink-2">
+          {guide.beforeApproval.whatWorks}
+        </p>
+        <ul className="mt-3 space-y-2 rounded-lg border border-edge bg-sunken p-4">
           {guide.beforeApproval.limits.map((limit) => (
-            <li key={limit}>{limit}</li>
+            <li key={limit} className="flex gap-2.5 text-sm text-ink-2">
+              <span aria-hidden className="mt-2 size-1 shrink-0 rounded-full bg-ink-3" />
+              <span>{limit}</span>
+            </li>
           ))}
         </ul>
-        <div className="mt-2">
-          <ClaimBadges claimIds={guide.beforeApproval.claimIds} claims={claims} />
-        </div>
+        <Refs claimIds={guide.beforeApproval.claimIds} claims={claims} />
       </Section>
 
       <Section title="Steps">
-        <ol className="space-y-4 text-sm">
+        <ol className="space-y-5">
           {guide.steps.map((step, i) => (
-            <li key={step.title} className="border-l-2 border-gray-200 pl-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-gray-400">{i + 1}.</span>
-                <p className="font-medium">{step.title}</p>
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">
-                  {step.actor === "agent"
-                    ? "🤖 Agent"
-                    : step.actor === "human"
-                      ? "👤 Human"
-                      : "🤖/👤 Either"}
+            <li key={step.title} className="relative pl-6">
+              <span
+                aria-hidden
+                className="absolute left-0 top-1.5 size-2 rounded-full border-2 border-edge-strong bg-surface"
+              />
+              {i < guide.steps.length - 1 && (
+                <span aria-hidden className="absolute left-[3px] top-5 h-full w-px bg-edge" />
+              )}
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <p className="text-sm font-medium text-ink">
+                  {step.title}
+                  <ClaimBadges claimIds={step.claimIds} claims={claims} />
+                </p>
+                <span
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                    step.actor === "human"
+                      ? "bg-accent-soft text-accent"
+                      : "bg-sunken text-ink-3"
+                  }`}
+                >
+                  {ACTOR_LABEL[step.actor] ?? step.actor}
                 </span>
                 {step.estTime && (
-                  <span className="text-xs text-gray-400">{step.estTime}</span>
+                  <span className="nums text-xs text-ink-3">{step.estTime}</span>
                 )}
               </div>
-              <p className="mt-1 text-gray-600">{step.detail}</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-2">{step.detail}</p>
               {step.whyHuman && (
-                <p className="mt-1 text-xs italic text-gray-500">
-                  Why human: {step.whyHuman}
-                </p>
+                <p className="mt-1 text-xs text-ink-3">Needs you: {step.whyHuman}</p>
               )}
-              <ClaimBadges claimIds={step.claimIds} claims={claims} />
             </li>
           ))}
         </ol>
       </Section>
 
       <Section title="Config">
-        <p className="text-sm">
-          Developer portal:{" "}
-          <a
-            href={guide.config.portalUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sky-600 underline"
-          >
-            {guide.config.portalUrl}
-          </a>
-        </p>
-        <p className="mt-2 text-sm text-gray-600">{guide.config.redirectUriNotes}</p>
+        <dl className="space-y-3 text-sm">
+          <div className="flex flex-wrap gap-x-2">
+            <dt className="text-ink-3">Portal</dt>
+            <dd className="min-w-0">
+              <a
+                href={guide.config.portalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="break-all font-mono text-xs text-accent underline decoration-accent/30 underline-offset-2 hover:decoration-accent"
+              >
+                {guide.config.portalUrl}
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt className="text-ink-3">Redirect URI</dt>
+            <dd className="mt-1 leading-relaxed text-ink-2">
+              {guide.config.redirectUriNotes}
+            </dd>
+          </div>
+        </dl>
+
         {guide.config.scopes.length > 0 && (
-          <table className="mt-3 w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
-                <th className="py-1 pr-2">Scope</th>
-                <th className="py-1 pr-2">Purpose</th>
-                <th className="py-1">Review level</th>
-              </tr>
-            </thead>
-            <tbody>
-              {guide.config.scopes.map((scope) => (
-                <tr key={scope.name} className="border-b border-gray-100">
-                  <td className="py-1 pr-2 font-mono text-xs">{scope.name}</td>
-                  <td className="py-1 pr-2 text-gray-600">{scope.purpose}</td>
-                  <td className="py-1">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
-                        (REVIEW_LEVEL_CHIP[scope.reviewLevel] ?? REVIEW_LEVEL_CHIP.unknown)
-                          .className
-                      }`}
-                    >
-                      {(REVIEW_LEVEL_CHIP[scope.reviewLevel] ?? REVIEW_LEVEL_CHIP.unknown).label}
-                    </span>
-                  </td>
+          <div className="mt-4 overflow-hidden rounded-lg border border-edge">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="bg-sunken">
+                  <th className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-ink-3">
+                    Scope
+                  </th>
+                  <th className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-ink-3">
+                    Purpose
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wide text-ink-3">
+                    Review
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {guide.config.scopes.map((scope) => {
+                  const level =
+                    REVIEW_LEVEL_TONE[scope.reviewLevel] ?? REVIEW_LEVEL_TONE.unknown;
+                  return (
+                    <tr key={scope.name} className="border-t border-edge align-top">
+                      <td className="px-3 py-2.5">
+                        <code className="break-all font-mono text-xs text-ink">
+                          {scope.name}
+                        </code>
+                      </td>
+                      <td className="px-3 py-2.5 text-ink-2">{scope.purpose}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${level.chip}`}
+                        >
+                          {level.label}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
+
         {guide.config.otherFields.length > 0 && (
-          <p className="mt-2 text-xs text-gray-500">
-            Other fields: {guide.config.otherFields.join(", ")}
+          <p className="mt-3 text-xs leading-relaxed text-ink-3">
+            Other fields: {guide.config.otherFields.join(" · ")}
           </p>
         )}
       </Section>
 
-      <Section title="Review & approval">
-        <p className="text-sm">
-          <span className="font-medium">Required when: </span>
+      <Section title="Review &amp; approval">
+        <p className="text-sm leading-relaxed text-ink-2">
+          <span className="text-ink-3">Required when </span>
           {guide.review.requiredWhen}
         </p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-          {guide.review.process.map((step) => (
-            <li key={step}>{step}</li>
+        <ol className="mt-3 space-y-2">
+          {guide.review.process.map((step, i) => (
+            <li key={step} className="flex gap-2.5 text-sm text-ink-2">
+              <span className="nums shrink-0 text-ink-3">{i + 1}.</span>
+              <span>{step}</span>
+            </li>
           ))}
-        </ul>
-        <dl className="mt-2 grid grid-cols-3 gap-4 text-sm">
-          <div>
-            <dt className="text-gray-500">Timeline</dt>
-            <dd>{guide.review.timeline}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Cost</dt>
-            <dd>{guide.review.cost}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Recurring</dt>
-            <dd>{guide.review.recurring}</dd>
-          </div>
-        </dl>
-        <div className="mt-2">
-          <ClaimBadges claimIds={guide.review.claimIds} claims={claims} />
+        </ol>
+        <div className="mt-4 grid gap-px overflow-hidden rounded-lg border border-edge bg-edge sm:grid-cols-3">
+          <Fact label="Timeline" value={guide.review.timeline} />
+          <Fact label="Cost" value={guide.review.cost} />
+          <Fact label="Recurring" value={guide.review.recurring} />
         </div>
+        <Refs claimIds={guide.review.claimIds} claims={claims} />
       </Section>
 
       <Section title="Gotchas">
-        <ul className="list-disc space-y-2 pl-5 text-sm">
+        <ul className="space-y-3">
           {guide.gotchas.map((gotcha) => (
-            <li key={gotcha.text}>
-              {gotcha.text} <ClaimBadges claimIds={gotcha.claimIds} claims={claims} />
+            <li
+              key={gotcha.text}
+              className="flex gap-2.5 border-l-2 border-warn/40 pl-3 text-sm leading-relaxed text-ink-2"
+            >
+              <span>
+                {gotcha.text}
+                <ClaimBadges claimIds={gotcha.claimIds} claims={claims} />
+              </span>
             </li>
           ))}
         </ul>
       </Section>
 
       <Section title="Hand off to Composio">
-        <ol className="list-decimal space-y-1 pl-5 text-sm">
-          {guide.composioHandoff.map((step) => (
-            <li key={step}>{step}</li>
+        <ol className="space-y-2.5">
+          {guide.composioHandoff.map((step, i) => (
+            <li key={step} className="flex gap-3 text-sm text-ink-2">
+              <span className="nums shrink-0 text-ink-3">{i + 1}.</span>
+              <span>{step}</span>
+            </li>
           ))}
         </ol>
       </Section>
 
-      <Section title="Evidence">
-        <ul className="space-y-3 text-sm">
+      <Section title="Evidence" hint={`${claims.length} claims behind this guide`}>
+        <ul className="divide-y divide-edge rounded-lg border border-edge">
           {claims.map((claim) => (
-            <li key={claim.id} className="flex items-start gap-2">
+            <li key={claim.id} className="flex gap-3 p-3">
               <ClaimBadges claimIds={[claim.id]} claims={claims} />
-              <span>{claim.text}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-relaxed text-ink-2">{claim.text}</p>
+                {claim.sources.length > 0 && (
+                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    {claim.sources.map((source) => (
+                      <a
+                        key={source.url}
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="truncate text-xs text-accent underline decoration-accent/30 underline-offset-2 hover:decoration-accent"
+                      >
+                        {source.title}
+                      </a>
+                    ))}
+                  </p>
+                )}
+                {claim.note && (
+                  <p className="mt-1 text-xs leading-relaxed text-ink-3">{claim.note}</p>
+                )}
+              </div>
             </li>
           ))}
         </ul>
+
         {guide.openQuestions.length > 0 && (
-          <div className="mt-4">
-            <p className="font-medium">Open questions</p>
-            <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
+          <div className="mt-4 rounded-lg border border-edge bg-sunken p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">
+              Open questions
+            </p>
+            <ul className="mt-2 space-y-2">
               {guide.openQuestions.map((q) => (
-                <li key={q}>{q}</li>
+                <li key={q} className="flex gap-2.5 text-sm text-ink-2">
+                  <span aria-hidden className="mt-2 size-1 shrink-0 rounded-full bg-ink-3" />
+                  <span>{q}</span>
+                </li>
               ))}
             </ul>
           </div>
         )}
-        <p className="mt-4 text-xs text-gray-400">
+
+        <p className="mt-4 text-xs text-ink-3">
           Last checked {guide.lastChecked} ·{" "}
           {guide.generatedBy === "seed"
             ? "Hand-verified seed guide"
@@ -233,11 +272,149 @@ export default function GuideView({ guide }: { guide: Guide }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+const STAGES = (min: string, typical: string, worst: string, midTone: string) => [
+  { k: "min", v: min, c: "text-ok" },
+  { k: "typical", v: typical, c: midTone },
+  { k: "worst", v: worst, c: "text-risk" },
+];
+
+function Verdict({ guide }: { guide: Guide }) {
+  const tone = BLOCKER_TONE[guide.verdict.blockerType];
+  const { min, typical, worst } = guide.verdict.readyIn;
+
   return (
-    <section className="mb-8">
-      <h2 className="mb-3 text-lg font-semibold">{title}</h2>
+    <header className="rounded-xl border border-edge bg-surface p-6 shadow-[var(--shadow-sm)]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-medium text-ink-3">{guide.appName}</p>
+        <span
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${tone.chip}`}
+        >
+          {tone.label}
+        </span>
+      </div>
+
+      <h1 className="mt-3 text-balance text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
+        {guide.verdict.oneLiner}
+        <ClaimBadges claimIds={guide.verdict.claimIds} claims={guide.claims} />
+      </h1>
+
+      <div className="mt-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">
+          Ready in
+        </p>
+        {/* Narrow screens stack: three columns turn these strings into unreadable
+            slivers when a value is a sentence rather than "10 minutes". */}
+        <dl className="mt-3 space-y-2.5 sm:hidden">
+          {STAGES(min, typical, worst, tone.fg).map((col) => (
+            <div key={col.k} className="flex items-baseline gap-2.5">
+              <span aria-hidden className={`size-[7px] shrink-0 rounded-full bg-current ${col.c}`} />
+              <dt className="w-16 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-ink-3">
+                {col.k}
+              </dt>
+              <dd className={`nums text-sm font-medium leading-snug ${col.c}`}>{col.v}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="relative mt-3 hidden sm:block">
+          <span
+            aria-hidden
+            className="absolute left-1 right-1 top-[3px] h-px bg-edge-strong"
+          />
+          <div className="relative grid grid-cols-3 gap-3">
+            {STAGES(min, typical, worst, tone.fg).map((col, i) => (
+              <div
+                key={col.k}
+                className={`flex flex-col ${
+                  i === 0
+                    ? "items-start text-left"
+                    : i === 1
+                      ? "items-center text-center"
+                      : "items-end text-right"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`size-[7px] rounded-full bg-current ${col.c}`}
+                />
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-ink-3">
+                  {col.k}
+                </p>
+                <p className={`nums mt-0.5 text-sm font-medium leading-snug ${col.c}`}>
+                  {col.v}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-edge pt-4 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-ink-3">Difficulty</span>
+          <span className="flex gap-1" aria-label={`${guide.verdict.difficulty} of 5`}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span
+                key={n}
+                className={`size-1.5 rounded-full ${
+                  n <= guide.verdict.difficulty ? `bg-current ${tone.fg}` : "bg-edge-strong"
+                }`}
+              />
+            ))}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-ink-3">Composio managed OAuth</span>
+          <span
+            className={`font-medium ${
+              guide.composio.managedOAuth === "yes" ? "text-ok" : "text-ink-2"
+            }`}
+          >
+            {guide.composio.managedOAuth}
+          </span>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-10">
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-edge pb-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink">{title}</h2>
+        {hint && <p className="text-xs text-ink-3">{hint}</p>}
+      </div>
       {children}
     </section>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-surface p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-3">
+        {label}
+      </p>
+      <p className="mt-1 text-sm leading-relaxed text-ink-2">{value}</p>
+    </div>
+  );
+}
+
+function Refs({ claimIds, claims }: { claimIds: string[]; claims: Guide["claims"] }) {
+  if (claimIds.length === 0) return null;
+  return (
+    <p className="mt-3 text-xs text-ink-3">
+      Evidence
+      <ClaimBadges claimIds={claimIds} claims={claims} />
+    </p>
   );
 }

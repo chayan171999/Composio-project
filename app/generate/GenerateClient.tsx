@@ -71,33 +71,43 @@ export default function GenerateClient({ query }: { query: string }) {
   }, [query, router]);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-2xl px-5 py-16">
       {!guide && (
         <>
-          <h1 className="text-xl font-semibold">
-            Generating a guide for &ldquo;{query}&rdquo;
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">
+            Researching
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+            {query}
           </h1>
-          <ol className="mt-4 space-y-1.5 text-sm">
+          <p className="mt-2 text-sm leading-relaxed text-ink-2">
+            Reading official documentation and labelling each claim with its
+            evidence. Usually under two minutes.
+          </p>
+          <ol className="mt-6 space-y-2 border-l border-edge pl-4 text-sm">
             {lines.map((line, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-gray-400">
-                  {line.kind === "fetch"
-                    ? line.ok === undefined
-                      ? "🔎"
-                      : line.ok
-                        ? "✅"
-                        : "❌"
-                    : line.kind === "warning"
-                      ? "⚠️"
-                      : "•"}
-                </span>
+              <li key={i} className="relative flex gap-2.5">
+                <span
+                  aria-hidden
+                  className={`absolute -left-[21px] top-1.5 size-1.5 rounded-full ${
+                    line.kind === "warning"
+                      ? "bg-warn"
+                      : line.kind === "fetch"
+                        ? line.ok === false
+                          ? "bg-risk"
+                          : line.ok
+                            ? "bg-ok"
+                            : "bg-edge-strong"
+                        : "bg-accent"
+                  }`}
+                />
                 <span
                   className={
                     line.kind === "warning"
-                      ? "text-amber-700"
+                      ? "text-warn"
                       : line.kind === "fetch"
-                        ? "break-all font-mono text-xs text-gray-600"
-                        : "text-gray-700"
+                        ? `break-all font-mono text-xs ${line.ok === false ? "text-ink-3 line-through" : "text-ink-2"}`
+                        : "text-ink-2"
                   }
                 >
                   {line.text}
@@ -105,19 +115,25 @@ export default function GenerateClient({ query }: { query: string }) {
               </li>
             ))}
           </ol>
-          {running && <p className="mt-4 text-sm text-gray-400">Working…</p>}
+          {running && (
+            <p className="mt-5 flex items-center gap-2 text-sm text-ink-3">
+              <span className="size-1.5 animate-pulse rounded-full bg-accent" />
+              Working…
+            </p>
+          )}
         </>
       )}
 
       {error && (
-        <div className="mt-6 rounded-md border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800">
+        <div className="mt-6 rounded-lg border border-risk/30 bg-risk-soft p-4 text-sm leading-relaxed text-risk">
           {error}
         </div>
       )}
 
       {guide && (
-        <p className="mt-6 text-sm text-gray-500">
-          Done — opening <span className="font-mono">/guides/{guide.slug}</span>…
+        <p className="mt-6 text-sm text-ink-3">
+          Done — opening{" "}
+          <span className="font-mono text-ink-2">/guides/{guide.slug}</span>…
         </p>
       )}
     </main>

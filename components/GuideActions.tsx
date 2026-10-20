@@ -5,12 +5,14 @@ import { useState } from "react";
 import { guideToMarkdown } from "@/lib/markdown";
 import type { Guide } from "@/lib/schema";
 
+const BTN =
+  "rounded-md border border-edge bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-2 transition-colors hover:border-edge-strong hover:text-ink";
+
 export default function GuideActions({ guide }: { guide: Guide }) {
   const [copied, setCopied] = useState<"url" | "markdown" | null>(null);
 
   const copy = async (what: "url" | "markdown") => {
-    const text =
-      what === "url" ? window.location.href : guideToMarkdown(guide);
+    const text = what === "url" ? window.location.href : guideToMarkdown(guide);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(what);
@@ -20,22 +22,16 @@ export default function GuideActions({ guide }: { guide: Guide }) {
     }
   };
 
-  const button =
-    "rounded-md border border-gray-300 px-2.5 py-1 text-xs hover:bg-gray-50";
-
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <button type="button" onClick={() => copy("url")} className={button}>
-        {copied === "url" ? "Copied" : "Share"}
+      <button type="button" onClick={() => copy("url")} className={BTN}>
+        {copied === "url" ? "Link copied" : "Share"}
       </button>
-      <button type="button" onClick={() => copy("markdown")} className={button}>
+      <button type="button" onClick={() => copy("markdown")} className={BTN}>
         {copied === "markdown" ? "Copied" : "Copy as Markdown"}
       </button>
       {guide.generatedBy === "agent" && (
-        <Link
-          href={`/generate?q=${encodeURIComponent(guide.appName)}`}
-          className={button}
-        >
+        <Link href={`/generate?q=${encodeURIComponent(guide.appName)}`} className={BTN}>
           Regenerate
         </Link>
       )}

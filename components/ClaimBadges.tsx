@@ -1,19 +1,14 @@
-import type { Claim, ClaimStatus } from "@/lib/schema";
+import { CLAIM_TONE } from "@/lib/display";
+import type { Claim } from "@/lib/schema";
 
-const STATUS_STYLES: Record<ClaimStatus, string> = {
-  tested: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  sourced: "bg-sky-100 text-sky-800 border-sky-300",
-  inferred: "bg-amber-100 text-amber-800 border-amber-300",
-  unverified: "bg-rose-100 text-rose-800 border-rose-300",
-};
-
-const STATUS_LABELS: Record<ClaimStatus, string> = {
-  tested: "Tested",
-  sourced: "Sourced",
-  inferred: "Inferred",
-  unverified: "Unverified",
-};
-
+/**
+ * Claim references render as footnote markers rather than repeated status words.
+ * Three "Sourced" chips in a row carried no more meaning than "¹ ² ³" and broke
+ * the reading line; status now shows as colour, with detail on hover or focus.
+ *
+ * Everything here is phrasing content — a <details> or <div> would be invalid
+ * inside the <p> elements these markers sit in, which fails hydration.
+ */
 export default function ClaimBadges({
   claimIds,
   claims,
@@ -28,40 +23,55 @@ export default function ClaimBadges({
   if (matched.length === 0) return null;
 
   return (
-    <span className="inline-flex flex-wrap gap-1.5 align-middle">
-      {matched.map((claim) => (
-        <details key={claim.id} className="group relative inline-block">
-          <summary
-            className={`cursor-pointer list-none rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[claim.status]}`}
-          >
-            {STATUS_LABELS[claim.status]}
-          </summary>
-          <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-md border border-gray-200 bg-white p-3 text-xs text-gray-700 shadow-lg">
-            <p className="mb-2">{claim.text}</p>
-            {claim.note && (
-              <p className="mb-2 italic text-gray-500">{claim.note}</p>
-            )}
-            {claim.sources.length > 0 ? (
-              <ul className="space-y-1">
-                {claim.sources.map((source) => (
-                  <li key={source.url}>
+    <span className="ml-1 inline-flex gap-0.5 align-super">
+      {matched.map((claim) => {
+        const tone = CLAIM_TONE[claim.status];
+        return (
+          <span key={claim.id} className="group relative inline-block">
+            <button
+              type="button"
+              aria-label={`${tone.label}: ${claim.text}`}
+              className={`nums cursor-help rounded px-1 text-[10px] font-semibold leading-4 ${tone.chip}`}
+            >
+              {claim.id.replace(/^c/, "")}
+            </button>
+            <span className="pointer-events-none invisible absolute left-0 top-full z-30 mt-1 w-72 rounded-lg border border-edge bg-surface p-3 text-left opacity-0 shadow-[var(--shadow-md)] transition-opacity group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100">
+              <span
+                className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone.chip}`}
+              >
+                {tone.label}
+              </span>
+              <span className="mt-2 block text-xs font-normal leading-relaxed text-ink">
+                {claim.text}
+              </span>
+              {claim.note && (
+                <span className="mt-2 block text-xs font-normal leading-relaxed text-ink-3">
+                  {claim.note}
+                </span>
+              )}
+              <span className="mt-2 block border-t border-edge pt-2">
+                {claim.sources.length > 0 ? (
+                  claim.sources.map((source) => (
                     <a
+                      key={source.url}
                       href={source.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-sky-600 underline hover:text-sky-800"
+                      className="block text-xs font-normal text-accent underline decoration-accent/30 underline-offset-2 hover:decoration-accent"
                     >
                       {source.title}
                     </a>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-400">No source cited.</p>
-            )}
-          </div>
-        </details>
-      ))}
+                  ))
+                ) : (
+                  <span className="block text-xs font-normal text-ink-3">
+                    No source — see the note above.
+                  </span>
+                )}
+              </span>
+            </span>
+          </span>
+        );
+      })}
     </span>
   );
 }

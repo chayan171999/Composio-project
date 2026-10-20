@@ -30,9 +30,12 @@ export default async function GuidePage({
   if (!guide) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-3xl px-5 py-10 sm:py-14">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <Link href="/" className="text-sm text-sky-600 underline">
+        <Link
+          href="/"
+          className="text-sm text-ink-3 transition-colors hover:text-ink"
+        >
           ← All guides
         </Link>
         <GuideActions guide={guide} />

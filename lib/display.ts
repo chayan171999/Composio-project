@@ -1,25 +1,53 @@
-import type { BlockerType } from "./schema";
+import type { BlockerType, ClaimStatus } from "./schema";
 
-type Chip = { label: string; className: string };
-
-export const BLOCKER_CHIP: Record<BlockerType, Chip> = {
-  none: { label: "No review", className: "bg-emerald-100 text-emerald-800" },
-  scope_review: { label: "Scope review", className: "bg-amber-100 text-amber-800" },
-  business_verification: {
-    label: "Business verification",
-    className: "bg-rose-100 text-rose-800",
-  },
-  partner_gated: { label: "Partner-gated", className: "bg-rose-100 text-rose-800" },
-  paid_plan: { label: "Paid plan", className: "bg-violet-100 text-violet-800" },
-  other: { label: "Other", className: "bg-gray-100 text-gray-700" },
+type Tone = {
+  label: string;
+  /** Background + text pair, for chips. */
+  chip: string;
+  /** Foreground only, for dots, rules and icons. */
+  fg: string;
 };
 
-// Review level is the single biggest driver of how long a guide's timeline runs,
-// so it is colour-coded the same way as the blocker type.
-export const REVIEW_LEVEL_CHIP: Record<string, Chip> = {
-  none: { label: "none", className: "bg-emerald-100 text-emerald-800" },
-  sensitive: { label: "sensitive", className: "bg-amber-100 text-amber-800" },
-  restricted: { label: "restricted", className: "bg-rose-100 text-rose-800" },
-  app_review: { label: "app review", className: "bg-rose-100 text-rose-800" },
-  unknown: { label: "unknown", className: "bg-gray-100 text-gray-700" },
+export const BLOCKER_TONE: Record<BlockerType, Tone> = {
+  none: { label: "No review", chip: "bg-ok-soft text-ok", fg: "text-ok" },
+  scope_review: {
+    label: "Scope review",
+    chip: "bg-warn-soft text-warn",
+    fg: "text-warn",
+  },
+  business_verification: {
+    label: "Business verification",
+    chip: "bg-risk-soft text-risk",
+    fg: "text-risk",
+  },
+  partner_gated: {
+    label: "Partner-gated",
+    chip: "bg-risk-soft text-risk",
+    fg: "text-risk",
+  },
+  paid_plan: { label: "Paid plan", chip: "bg-info-soft text-info", fg: "text-info" },
+  other: { label: "Other", chip: "bg-sunken text-ink-2", fg: "text-ink-2" },
+};
+
+// Review level drives how long a guide's timeline runs, so it shares the blocker
+// palette rather than inventing a second colour language.
+export const REVIEW_LEVEL_TONE: Record<string, Tone> = {
+  none: { label: "none", chip: "bg-ok-soft text-ok", fg: "text-ok" },
+  sensitive: { label: "sensitive", chip: "bg-warn-soft text-warn", fg: "text-warn" },
+  restricted: { label: "restricted", chip: "bg-risk-soft text-risk", fg: "text-risk" },
+  app_review: { label: "app review", chip: "bg-risk-soft text-risk", fg: "text-risk" },
+  unknown: { label: "unknown", chip: "bg-sunken text-ink-3", fg: "text-ink-3" },
+};
+
+export const CLAIM_TONE: Record<ClaimStatus, Tone> = {
+  tested: { label: "Tested", chip: "bg-ok-soft text-ok", fg: "text-ok" },
+  sourced: { label: "Sourced", chip: "bg-accent-soft text-accent", fg: "text-accent" },
+  inferred: { label: "Inferred", chip: "bg-warn-soft text-warn", fg: "text-warn" },
+  unverified: { label: "Unverified", chip: "bg-risk-soft text-risk", fg: "text-risk" },
+};
+
+export const ACTOR_LABEL: Record<string, string> = {
+  agent: "Agent",
+  human: "You",
+  either: "Either",
 };

@@ -1,19 +1,97 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #fbfbfd;
+  --surface: #ffffff;
+  --surface-sunken: #f5f6f8;
+  --border: #e4e6eb;
+  --border-strong: #d2d6dd;
+
+  --text: #14161a;
+  --text-secondary: #4a5159;
+  --text-muted: #878e98;
+
+  --accent: #2f5fe0;
+  --accent-soft: #eef2fe;
+
+  --ok: #0f7a52;
+  --ok-soft: #e6f6ee;
+  --warn: #9a6400;
+  --warn-soft: #fdf3e0;
+  --risk: #b02a4a;
+  --risk-soft: #fdedf0;
+  --info: #5b45c7;
+  --info-soft: #f0ecfd;
+
+  --shadow-sm: 0 1px 2px rgb(16 18 22 / 0.05);
+  --shadow-md: 0 4px 16px -4px rgb(16 18 22 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0c10;
+    --surface: #121620;
+    --surface-sunken: #0f131b;
+    --border: #232a36;
+    --border-strong: #323b4a;
+
+    --text: #e8ebf0;
+    --text-secondary: #a7b0bd;
+    --text-muted: #6f7988;
+
+    --accent: #7fa0ff;
+    --accent-soft: #18203a;
+
+    --ok: #4ad99a;
+    --ok-soft: #0d2a20;
+    --warn: #e8b55c;
+    --warn-soft: #2c2213;
+    --risk: #ff8099;
+    --risk-soft: #2e1620;
+    --info: #b0a0ff;
+    --info-soft: #1e1a33;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 20px -4px rgb(0 0 0 / 0.5);
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunken: var(--surface-sunken);
+  --color-edge: var(--border);
+  --color-edge-strong: var(--border-strong);
+
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-secondary);
+  --color-ink-3: var(--text-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-risk: var(--risk);
+  --color-risk-soft: var(--risk-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Tabular figures keep the timeline and difficulty readouts from jittering. */
+.nums {
+  font-variant-numeric: tabular-nums;
+}
+
