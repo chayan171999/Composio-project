@@ -29,6 +29,10 @@ const SYNTHESIS_MAX_TOKENS = 32000;
 const MAX_URLS = 8;
 const RETRY_ATTEMPTS = 4;
 const RETRY_BASE_MS = 2000;
+// Kept under the route's maxDuration so a stuck generation surfaces as a real error
+// rather than an opaque platform timeout.
+const WALL_CLOCK_MS = 150_000;
+const PER_CALL_TIMEOUT_MS = 60_000;
 
 // Mirrors guideSchema minus the fields set in code, and without refinements —
 // JSON Schema cannot express those. The result is re-validated against the real
@@ -137,17 +141,36 @@ const discoveryJsonSchema = stripUnsupportedKeywords(z.toJSONSchema(discoverySch
 // googleSearch grounding returns for having no free quota at all.
 async function withRetry<T>(
   label: string,
-  call: () => Promise<T>,
+  call: (signal: AbortSignal) => Promise<T>,
   onRetry: (message: string) => void,
+  deadline: AbortSignal,
 ): Promise<T> {
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
+    if (deadline.aborted) {
+      throw new Error(`${label} ran out of time (${WALL_CLOCK_MS / 1000}s budget).`);
+    }
     try {
-      return await call();
+      return await call(
+        AbortSignal.any([deadline, AbortSignal.timeout(PER_CALL_TIMEOUT_MS)]),
+      );
     } catch (error) {
       lastError = error;
+      if (deadline.aborted) {
+        throw new Error(`${label} ran out of time (${WALL_CLOCK_MS / 1000}s budget).`);
+      }
       const message = String(error instanceof Error ? error.message : error);
+
+      // A daily-quota 429 names the free-tier metric and asks for a wait measured in
+      // minutes, so retrying only burns the time budget. Surface it instead.
+      if (/free_tier_requests|PerDay/.test(message)) {
+        const minutes = message.match(/retry in (\d+)m/)?.[1];
+        throw new Error(
+          `Daily free-tier quota exhausted for ${MODEL}.${minutes ? ` Resets in about ${minutes} minutes.` : ""} Seed guides still work; generation needs a fresh quota window or a billed key.`,
+        );
+      }
+
       const retryable = /"code":\s*(503|429)/.test(message);
       if (!retryable || attempt === RETRY_ATTEMPTS) break;
 
@@ -243,6 +266,7 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
   const ai = new GoogleGenAI({ apiKey });
+  const deadline = AbortSignal.timeout(WALL_CLOCK_MS);
 
   yield { type: "stage", message: `Resolving "${query}"…` };
   yield { type: "stage", message: "Checking Composio managed auth…" };
@@ -257,7 +281,7 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
   yield { type: "stage", message: "Finding official documentation…" };
   const discovery = await withRetry(
     "Discovery",
-    () =>
+    (signal) =>
       ai.models.generateContent({
         model: MODEL,
         contents: discoveryPrompt(query),
@@ -266,9 +290,11 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
           maxOutputTokens: DISCOVERY_MAX_TOKENS,
           responseMimeType: "application/json",
           responseJsonSchema: discoveryJsonSchema,
+          abortSignal: signal,
         },
       }),
     note,
+    deadline,
   );
   yield* drain();
 
@@ -284,7 +310,7 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
   yield { type: "stage", message: "Reading documentation…" };
   const research = await withRetry(
     "Reading documentation",
-    () =>
+    (signal) =>
       ai.models.generateContent({
         model: MODEL,
         contents: researchPrompt(query, composio, candidates),
@@ -292,9 +318,11 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
           systemInstruction: RESEARCH_SYSTEM,
           maxOutputTokens: RESEARCH_MAX_TOKENS,
           tools: [{ urlContext: {} }],
+          abortSignal: signal,
         },
       }),
     note,
+    deadline,
   );
   yield* drain();
 
@@ -333,13 +361,14 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
 
   const response = await withRetry(
     "Synthesis",
-    () =>
+    (signal) =>
       ai.models.generateContent({
         model: MODEL,
         contents: synthesisPrompt(query, composio, brief, sources),
-        config: synthesisConfig,
+        config: { ...synthesisConfig, abortSignal: signal },
       }),
     note,
+    deadline,
   );
   yield* drain();
 
@@ -356,7 +385,7 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
     };
     const repair = await withRetry(
       "Repair",
-      () =>
+      (signal) =>
         ai.models.generateContent({
           model: MODEL,
           contents: [
@@ -364,9 +393,10 @@ export async function* generateGuide(query: string): AsyncGenerator<ProgressEven
             { role: "model", parts: [{ text: JSON.stringify(draft) }] },
             { role: "user", parts: [{ text: repairPrompt(errors.join("\n")) }] },
           ],
-          config: synthesisConfig,
+          config: { ...synthesisConfig, abortSignal: signal },
         }),
       note,
+      deadline,
     );
     yield* drain();
 
